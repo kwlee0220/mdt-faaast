@@ -1,0 +1,53 @@
+package mdt.ksx9101.jpa;
+
+import java.sql.Timestamp;
+
+import org.hibernate.annotations.Immutable;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+import mdt.ksx9101.model.LOT;
+import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.PropertyField;
+
+/**
+ *
+ * @author Kang-Woo Lee (ETRI)
+ */
+@Entity
+@Immutable
+@Table(name="EM_LOT")
+@Getter @Setter
+public class JpaLOT extends AbstractMDTSubmodelElementCollection implements LOT {
+	@PropertyField(idShort="LotId") @Id private String lotId;
+	@PropertyField(idShort="ItemId") private String itemId;
+	@PropertyField(idShort="State") private String state;
+	@PropertyField(idShort="Quantity") private Integer quantity;
+	@PropertyField(idShort="OperationId") private String operationId;
+	@PropertyField(idShort="EquipmentId") private String equipmentId;
+	
+	@PropertyField(idShort="StartDateTime")
+	@Column(name="STARTDATETIME")
+	private Timestamp startDateTime;
+	
+	@PropertyField(idShort="EndDateTime")
+	@Column(name="ENDDATETIME")
+	private Timestamp endDateTime;
+	
+	@PropertyField(idShort="AppliedTactTime")
+	@Column(name="APPLIED_TACTTIME")
+	private Float appliedTactTime;
+	
+	public JpaLOT() {
+		super(null, "lotId");
+	}
+	
+	@Override
+	public String toString() {
+		return String.format("%s[%s]", getClass().getSimpleName(), this.lotId);
+	}
+}

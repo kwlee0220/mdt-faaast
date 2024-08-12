@@ -1,0 +1,21 @@
+plugins {
+	id 'java'
+	id 'eclipse'
+}
+
+dependencies {
+	implementation project(":utils")
+	implementation project(":mdt-client")
+	implementation project(":mdt-operation-http")
+	implementation project(":faaast:faaast-lib")
+	
+	// Hibernate
+	implementation "org.hibernate.orm:hibernate-core:${hibernate_version}"
+	implementation "com.zaxxer:HikariCP:${hikaricp_version}"
+	
+	// MariaDB
+	implementation "org.mariadb.jdbc:mariadb-java-client:${mariadb_version}"
+
+	// Spring Framework
+	implementation "org.springframework.data:spring-data-jpa:${spring_data_version}"
+}
