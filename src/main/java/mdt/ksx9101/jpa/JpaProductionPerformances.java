@@ -9,7 +9,7 @@ import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.ProductionPerformance;
 import mdt.ksx9101.model.ProductionPerformances;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -18,14 +18,14 @@ import mdt.model.SubmodelElementListHandle;
  */
 @Getter @Setter
 public class JpaProductionPerformances
-					extends SubmodelElementListHandle<ProductionPerformance,JpaProductionPerformance>
+					extends SubmodelElementListEntity<ProductionPerformance,JpaProductionPerformance>
 					implements ProductionPerformances {
 	public JpaProductionPerformances() {
 		super("ProductionPerformances", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaProductionPerformance newElementHandle() {
+	public JpaProductionPerformance newElementEntity() {
 		return new JpaProductionPerformance();
 	}
 	

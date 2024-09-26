@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.Line;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -22,7 +22,7 @@ import mdt.model.PropertyField;
 //@Table(name="lines")
 @Table(name="V2_LINE")
 @Getter @Setter
-public class JpaLine extends AbstractMDTSubmodelElementCollection implements Line {
+public class JpaLine extends SubmodelElementCollectionEntity implements Line {
 	@PropertyField(idShort="LineID") @Id private String lineID;
 	@PropertyField(idShort="LineName") private String lineName;
 	@PropertyField(idShort="LineType") private String lineType;

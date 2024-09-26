@@ -6,15 +6,15 @@ import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.common.provider.MultiFormatOperationProvider;
-import mdt.assetconnection.simulation.SimulationOperationProviderConfig;
+import mdt.assetconnection.operation.MDTOperationProviderConfig;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class UnsupportedOperationProvider extends MultiFormatOperationProvider<SimulationOperationProviderConfig> {
-	protected UnsupportedOperationProvider(SimulationOperationProviderConfig config) {
+public class UnsupportedOperationProvider extends MultiFormatOperationProvider<MDTOperationProviderConfig> {
+	protected UnsupportedOperationProvider(MDTOperationProviderConfig config) {
 		super(config);
 	}
 

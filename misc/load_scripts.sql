@@ -125,7 +125,11 @@ INSERT INTO v2_equipment (EquipmentID, EquipmentName, EquipmentType, UseIndicato
 	('KRCW-01EWEM023', '고주파 용접 #11', 'Cycle 조립 설비', 'True'),
 	('KRCW-02ER1A001', '내함 성형', '내함 성형 설비', 'True'),
 	('KRCW-02ER1B001', '형합', '형합 설비', 'True'),
-	('KRCW-02ER1C001', 'Cycle(냉매순환)', 'Cycle(냉매순환) 설비', 'True');
+	('KRCW-02ER1C001', 'Cycle(냉매순환)', 'Cycle(냉매순환) 설비', 'True'),
+	('KRCW-02ER1A101', 'Heater', 'Heater', 'True'),
+	('KRCW-02ER1A102', 'VaccumFormer', 'VaccumFormer', 'True'),
+	('KRCW-02ER1A103', 'PiercingTrimming', 'PiercingTrimming', 'True'),
+	('KRCW-02ER1A104', 'QualityInspection', 'QualityInspection', 'True');
 
 
 drop table if exists v2_equipmentparameter;

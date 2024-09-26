@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.ProductionOrder;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 /**
@@ -17,7 +17,7 @@ import mdt.model.PropertyField;
 //@Table(name="production_orders")
 @Table(name="V2_PRODUCTIONORDER")
 @Getter @Setter
-public class JpaProductionOrder extends AbstractMDTSubmodelElementCollection implements ProductionOrder {
+public class JpaProductionOrder extends SubmodelElementCollectionEntity implements ProductionOrder {
 	@PropertyField(idShort="ProductionOrderID") @Id private String productionOrderID;
 	@PropertyField(idShort="ProductionOrderSequence") private String productionOrderSequence;
 

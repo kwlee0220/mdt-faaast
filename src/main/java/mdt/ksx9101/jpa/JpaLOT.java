@@ -5,24 +5,22 @@ import java.sql.Timestamp;
 import org.hibernate.annotations.Immutable;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.LOT;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@Entity
 @Immutable
-@Table(name="EM_LOT")
+//@Entity
+//@Table(name="EM_LOT")
 @Getter @Setter
-public class JpaLOT extends AbstractMDTSubmodelElementCollection implements LOT {
+public class JpaLOT extends SubmodelElementCollectionEntity implements LOT {
 	@PropertyField(idShort="LotId") @Id private String lotId;
 	@PropertyField(idShort="ItemId") private String itemId;
 	@PropertyField(idShort="State") private String state;

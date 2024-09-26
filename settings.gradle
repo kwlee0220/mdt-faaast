@@ -1,0 +1,13 @@
+rootProject.name = 'mdt-faaast'
+
+include ':utils'
+project(':utils').projectDir = file('../../common/utils')
+
+include ':mdt-client'
+project(':mdt-client').projectDir = file('../mdt-client')
+
+include ':mdt-operation-http'
+project(':mdt-operation-http').projectDir = file('../mdt-operation-http')
+
+include ':faaast-lib'
+project(':faaast-lib').projectDir = file('../faaast/faaast-lib')

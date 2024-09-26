@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.Routing;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -18,7 +18,7 @@ import mdt.model.PropertyField;
 //@Table(name="routings")
 @Table(name="V2_LINE_ROUTING")
 @Getter @Setter
-public class JpaRouting extends AbstractMDTSubmodelElementCollection implements Routing {
+public class JpaRouting extends SubmodelElementCollectionEntity implements Routing {
 //	private String lineId;
 	@Id @PropertyField(idShort="RoutingID") private String routingID;
 	@PropertyField(idShort="RoutingName") private String routingName;

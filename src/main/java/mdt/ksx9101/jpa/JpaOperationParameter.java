@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import mdt.ksx9101.jpa.JpaOperationParameter.Key;
 import mdt.ksx9101.model.OperationParameter;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 /**
@@ -24,7 +24,7 @@ import mdt.model.PropertyField;
 @Table(name="V2_OPERATIONPARAMETER")
 @IdClass(Key.class)
 @Getter @Setter
-public class JpaOperationParameter extends AbstractMDTSubmodelElementCollection
+public class JpaOperationParameter extends SubmodelElementCollectionEntity
 									implements OperationParameter {
 	@Data
 	@NoArgsConstructor

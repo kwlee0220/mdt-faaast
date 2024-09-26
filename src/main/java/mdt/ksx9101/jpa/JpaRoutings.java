@@ -9,7 +9,7 @@ import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.Routing;
 import mdt.ksx9101.model.Routings;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -17,14 +17,14 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaRoutings extends SubmodelElementListHandle<Routing,JpaRouting>
+public class JpaRoutings extends SubmodelElementListEntity<Routing,JpaRouting>
 							implements Routings {
 	public JpaRoutings() {
 		super("Routings", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaRouting newElementHandle() {
+	public JpaRouting newElementEntity() {
 		return new JpaRouting();
 	}
 	

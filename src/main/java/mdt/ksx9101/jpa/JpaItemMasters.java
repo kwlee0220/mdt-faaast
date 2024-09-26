@@ -9,7 +9,7 @@ import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.ItemMaster;
 import mdt.ksx9101.model.ItemMasters;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -17,14 +17,14 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaItemMasters extends SubmodelElementListHandle<ItemMaster,JpaItemMaster>
+public class JpaItemMasters extends SubmodelElementListEntity<ItemMaster,JpaItemMaster>
 								implements ItemMasters {
 	public JpaItemMasters() {
 		super("ItemMasters", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaItemMaster newElementHandle() {
+	public JpaItemMaster newElementEntity() {
 		return new JpaItemMaster();
 	}
 	

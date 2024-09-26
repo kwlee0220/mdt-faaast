@@ -5,7 +5,7 @@ import java.util.Map;
 import com.google.common.collect.Maps;
 
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.model.MDTSubmodelElement;
+import mdt.model.SubmodelElementEntity;
 
 
 /**
@@ -31,7 +31,7 @@ public class JpaMDTEntityFactory {
 	}
 	
 	public JpaEntityLoader newInstance(String id) {
-		JpaEntityLoader<? extends MDTSubmodelElement> loader = FQCN_TO_ADAPTORS.get(id);
+		JpaEntityLoader<? extends SubmodelElementEntity> loader = FQCN_TO_ADAPTORS.get(id);
 		if ( loader == null ) {
 			throw new IllegalArgumentException("Unknown MDTEntity: id=" + id);
 		}

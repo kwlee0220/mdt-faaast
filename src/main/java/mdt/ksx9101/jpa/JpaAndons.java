@@ -9,7 +9,7 @@ import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.Andon;
 import mdt.ksx9101.model.Andons;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -17,13 +17,13 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaAndons extends SubmodelElementListHandle<Andon,JpaAndon> implements Andons {
+public class JpaAndons extends SubmodelElementListEntity<Andon,JpaAndon> implements Andons {
 	public JpaAndons() {
 		super("Andons", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaAndon newElementHandle() {
+	public JpaAndon newElementEntity() {
 		return new JpaAndon();
 	}
 	

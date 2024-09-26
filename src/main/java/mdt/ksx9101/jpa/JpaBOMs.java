@@ -9,7 +9,7 @@ import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.BOM;
 import mdt.ksx9101.model.BOMs;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -17,13 +17,13 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaBOMs extends SubmodelElementListHandle<BOM,JpaBOM> implements BOMs {
+public class JpaBOMs extends SubmodelElementListEntity<BOM,JpaBOM> implements BOMs {
 	public JpaBOMs() {
 		super("BOMs", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaBOM newElementHandle() {
+	public JpaBOM newElementEntity() {
 		return new JpaBOM();
 	}
 	

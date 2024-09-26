@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.Repair;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -18,7 +18,7 @@ import mdt.model.PropertyField;
 //@Table(name="repairs")
 @Table(name="V2_REPAIR")
 @Getter @Setter
-public class JpaRepair extends AbstractMDTSubmodelElementCollection implements Repair {
+public class JpaRepair extends SubmodelElementCollectionEntity implements Repair {
 //	private String lineId;
 	@PropertyField(idShort="RepairID") @Id private Long repairID;
 	@PropertyField(idShort="GroupID") private String groupID;

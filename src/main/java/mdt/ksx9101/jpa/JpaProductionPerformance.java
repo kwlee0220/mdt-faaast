@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.ProductionPerformance;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 /**
@@ -17,7 +17,7 @@ import mdt.model.PropertyField;
 //@Table(name="production_performances")
 @Table(name="V2_PRODUCTIONPERFORMANCE")
 @Getter @Setter
-public class JpaProductionPerformance extends AbstractMDTSubmodelElementCollection
+public class JpaProductionPerformance extends SubmodelElementCollectionEntity
 										implements ProductionPerformance {
 //	private String lineId;
 	@PropertyField(idShort="ProductionPerformanceID") @Id private String productionPerformanceID;

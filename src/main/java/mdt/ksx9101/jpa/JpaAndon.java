@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.Andon;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 /**
@@ -20,7 +20,7 @@ import mdt.model.PropertyField;
 @Immutable
 @Table(name="V2_ANDON")
 @Getter @Setter
-public class JpaAndon extends AbstractMDTSubmodelElementCollection implements Andon {
+public class JpaAndon extends SubmodelElementCollectionEntity implements Andon {
 //	private String lineId;
 	@PropertyField(idShort="AndonID") @Id private Long andonID;
 	@PropertyField(idShort="GroupID") private String groupID;

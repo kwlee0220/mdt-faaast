@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.ProductionPlanning;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 /**
@@ -17,7 +17,7 @@ import mdt.model.PropertyField;
 //@Table(name="production_plannings")
 @Table(name="V2_PRODUCTIONPLANNING")
 @Getter @Setter
-public class JpaProductionPlanning extends AbstractMDTSubmodelElementCollection
+public class JpaProductionPlanning extends SubmodelElementCollectionEntity
 									implements ProductionPlanning {
 //	private String lineId;
 	@PropertyField(idShort="ProductionPlanID") @Id private String productionPlanID;

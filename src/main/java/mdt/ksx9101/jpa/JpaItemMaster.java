@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.ItemMaster;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -18,7 +18,7 @@ import mdt.model.PropertyField;
 //@Table(name="item_masters")
 @Table(name="V2_LINE_ITEMMASTER")
 @Getter @Setter
-public class JpaItemMaster extends AbstractMDTSubmodelElementCollection implements ItemMaster {
+public class JpaItemMaster extends SubmodelElementCollectionEntity implements ItemMaster {
 //	private String lineId;
 	@Id @PropertyField(idShort="ItemID") private String itemID;
 	@PropertyField(idShort="ItemType") private String itemType;

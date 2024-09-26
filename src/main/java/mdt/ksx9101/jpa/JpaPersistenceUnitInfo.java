@@ -41,7 +41,7 @@ public class JpaPersistenceUnitInfo implements PersistenceUnitInfo {
 		JpaOperationParameter.class.getName(),
 		JpaOperationParameterValue.class.getName(),
 		JpaEquipments.class.getName(),
-		JpaLOT.class.getName(),
+//		JpaLOT.class.getName(),
 		JpaLine.class.getName()
 	);
 	

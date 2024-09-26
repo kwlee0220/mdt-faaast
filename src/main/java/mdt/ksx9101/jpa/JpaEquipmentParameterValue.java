@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.jpa.JpaEquipmentParameter.Key;
 import mdt.ksx9101.model.EquipmentParameterValue;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -21,7 +21,7 @@ import mdt.model.PropertyField;
 @Table(name="V2_EQUIPMENTPARAMETERVALUE")
 @IdClass(Key.class)
 @Getter @Setter
-public class JpaEquipmentParameterValue extends AbstractMDTSubmodelElementCollection
+public class JpaEquipmentParameterValue extends SubmodelElementCollectionEntity
 										implements EquipmentParameterValue {
 	@Id private String equipmentId;
 	@Id @PropertyField(idShort="ParameterID") private String parameterId;

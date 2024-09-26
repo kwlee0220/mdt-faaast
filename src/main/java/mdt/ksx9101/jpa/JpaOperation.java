@@ -23,7 +23,7 @@ import mdt.ksx9101.model.Operation;
 import mdt.ksx9101.model.Parameter;
 import mdt.ksx9101.model.ParameterValue;
 import mdt.ksx9101.model.ProductionOrder;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 import mdt.model.SMLField;
 
@@ -36,7 +36,7 @@ import mdt.model.SMLField;
 //@Table(name="operations")
 @Table(name="V2_OPERATION")
 @Getter @Setter
-public class JpaOperation extends AbstractMDTSubmodelElementCollection implements Operation {
+public class JpaOperation extends SubmodelElementCollectionEntity implements Operation {
 	@Id @PropertyField(idShort="OperationID") private String operationId;
 	@PropertyField(idShort="OperationName") private String operationName;
 	@PropertyField(idShort="OperationType") private String operationType;

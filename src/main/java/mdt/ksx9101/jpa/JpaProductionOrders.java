@@ -9,7 +9,7 @@ import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.ProductionOrder;
 import mdt.ksx9101.model.ProductionOrders;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -17,14 +17,14 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaProductionOrders extends SubmodelElementListHandle<ProductionOrder,JpaProductionOrder>
+public class JpaProductionOrders extends SubmodelElementListEntity<ProductionOrder,JpaProductionOrder>
 									implements ProductionOrders {
 	public JpaProductionOrders() {
 		super("ProductionOrders", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaProductionOrder newElementHandle() {
+	public JpaProductionOrder newElementEntity() {
 		return new JpaProductionOrder();
 	}
 	

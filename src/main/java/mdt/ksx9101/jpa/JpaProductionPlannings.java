@@ -9,7 +9,7 @@ import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.ProductionPlanning;
 import mdt.ksx9101.model.ProductionPlannings;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -18,14 +18,14 @@ import mdt.model.SubmodelElementListHandle;
  */
 @Getter @Setter
 public class JpaProductionPlannings
-						extends SubmodelElementListHandle<ProductionPlanning,JpaProductionPlanning>
+						extends SubmodelElementListEntity<ProductionPlanning,JpaProductionPlanning>
 						implements ProductionPlannings {
 	public JpaProductionPlannings() {
 		super("ProductionPlannings", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaProductionPlanning newElementHandle() {
+	public JpaProductionPlanning newElementEntity() {
 		return new JpaProductionPlanning();
 	}
 	

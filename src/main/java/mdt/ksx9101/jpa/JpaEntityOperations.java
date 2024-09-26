@@ -5,6 +5,8 @@ import java.util.List;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import utils.func.Funcs;
 import utils.stream.FStream;
@@ -14,10 +16,10 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import mdt.ksx9101.EntityConfiguration;
 import mdt.ksx9101.KSX9101PersistencerConfig;
-import mdt.model.MDTSubmodelElement;
+import mdt.model.SubmodelElementEntity;
+import mdt.model.ResourceAlreadyExistsException;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelUtils;
-import mdt.model.registry.ResourceAlreadyExistsException;
-import mdt.model.registry.ResourceNotFoundException;
 
 
 /**
@@ -25,6 +27,8 @@ import mdt.model.registry.ResourceNotFoundException;
  * @author Kang-Woo Lee (ETRI)
  */
 public class JpaEntityOperations {
+	private static final Logger s_logger = LoggerFactory.getLogger(JpaEntityOperations.class);
+	
 	private final KSX9101PersistencerConfig m_persistConfig;
 	private final EntityManagerFactory m_emf;
 	
@@ -86,8 +90,11 @@ public class JpaEntityOperations {
 	}
 	
 	private SubmodelElement read(EntityManager em, EntityConfiguration entityConf) {
-		MDTSubmodelElement adaptor = entityConf.loadJpaEntity(em);
+		SubmodelElementEntity adaptor = entityConf.loadJpaEntity(em);
 		if ( adaptor == null ) {
+			if ( s_logger.isInfoEnabled() ) {
+				s_logger.info("Failed to find TopEntity: {}", entityConf);
+			}
 			throw new ResourceNotFoundException("TopEntity", entityConf.toString());
 		}
 		

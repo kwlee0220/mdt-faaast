@@ -13,7 +13,7 @@ import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.Equipment;
 import mdt.ksx9101.model.Equipments;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -21,10 +21,10 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaEquipments extends SubmodelElementListHandle<Equipment,JpaEquipment>
+public class JpaEquipments extends SubmodelElementListEntity<Equipment,JpaEquipment>
 							implements Equipments {
 	@Override
-	public JpaEquipment newElementHandle() {
+	public JpaEquipment newElementEntity() {
 		return new JpaEquipment();
 	}
 	

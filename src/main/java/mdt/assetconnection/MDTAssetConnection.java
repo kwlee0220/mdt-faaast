@@ -1,26 +1,25 @@
-package mdt.assetconnection.simulation;
+package mdt.assetconnection;
+
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AbstractAssetConnection;
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
-import mdt.assetconnection.UnsupportedSubscriptionProvider;
-import mdt.assetconnection.UnsupportedSubscriptionProviderConfig;
-import mdt.assetconnection.UnsupportedValueProvider;
-import mdt.assetconnection.UnsupportedValueProviderConfig;
+import mdt.assetconnection.operation.MDTOperationProvider;
+import mdt.assetconnection.operation.MDTOperationProviderConfig;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class SimulationAssetConnection extends AbstractAssetConnection<SimulationAssetConnection,
-																		SimulationAssetConnectionConfig,
-																		UnsupportedValueProviderConfig,
-																		UnsupportedValueProvider,
-																		SimulationOperationProviderConfig,
-																		SimulationOperationProvider,
-																		UnsupportedSubscriptionProviderConfig,
-																		UnsupportedSubscriptionProvider> {
+public class MDTAssetConnection extends AbstractAssetConnection<MDTAssetConnection,
+																	MDTAssetConnectionConfig,
+																	UnsupportedValueProviderConfig,
+																	UnsupportedValueProvider,
+																	MDTOperationProviderConfig,
+																	MDTOperationProvider,
+																	UnsupportedSubscriptionProviderConfig,
+																	UnsupportedSubscriptionProvider> {
 	@Override
 	public String getEndpointInformation() {
 		return null;
@@ -40,10 +39,10 @@ public class SimulationAssetConnection extends AbstractAssetConnection<Simulatio
 	}
 
 	@Override
-	protected SimulationOperationProvider createOperationProvider(Reference reference,
-															SimulationOperationProviderConfig providerConfig)
+	protected MDTOperationProvider createOperationProvider(Reference reference,
+															MDTOperationProviderConfig providerConfig)
 		throws AssetConnectionException {
-		return new SimulationOperationProvider(this.serviceContext, reference, providerConfig);
+		return new MDTOperationProvider(this.serviceContext, reference, providerConfig);
 	}
 
 	@Override

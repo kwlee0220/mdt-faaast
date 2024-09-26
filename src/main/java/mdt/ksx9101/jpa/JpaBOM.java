@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.BOM;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -18,7 +18,7 @@ import mdt.model.PropertyField;
 //@Table(name="boms")
 @Table(name="V2_LINE_BOM")
 @Getter @Setter
-public class JpaBOM extends AbstractMDTSubmodelElementCollection implements BOM {
+public class JpaBOM extends SubmodelElementCollectionEntity implements BOM {
 //	private String lineId;
 	@Id @PropertyField(idShort="BOMID") private String BOMID;
 	@PropertyField(idShort="BOMType") private String BOMType;

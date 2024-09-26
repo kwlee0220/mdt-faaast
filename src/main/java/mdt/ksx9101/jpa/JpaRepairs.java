@@ -9,7 +9,7 @@ import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.Repair;
 import mdt.ksx9101.model.Repairs;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -17,13 +17,13 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaRepairs extends SubmodelElementListHandle<Repair,JpaRepair> implements Repairs {
+public class JpaRepairs extends SubmodelElementListEntity<Repair,JpaRepair> implements Repairs {
 	public JpaRepairs() {
 		super("Repairs", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaRepair newElementHandle() {
+	public JpaRepair newElementEntity() {
 		return new JpaRepair();
 	}
 	

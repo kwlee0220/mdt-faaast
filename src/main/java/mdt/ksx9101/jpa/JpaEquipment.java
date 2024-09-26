@@ -21,7 +21,7 @@ import mdt.ksx9101.JpaEntityLoader;
 import mdt.ksx9101.model.Equipment;
 import mdt.ksx9101.model.Parameter;
 import mdt.ksx9101.model.ParameterValue;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 import mdt.model.SMLField;
 
@@ -32,7 +32,7 @@ import mdt.model.SMLField;
 @Entity
 @Table(name="V2_EQUIPMENT")
 @Getter @Setter
-public class JpaEquipment extends AbstractMDTSubmodelElementCollection
+public class JpaEquipment extends SubmodelElementCollectionEntity
 							implements Equipment {
 	@PropertyField(idShort="EquipmentID") @Id private String equipmentId;
 	@PropertyField(idShort="EquipmentName") private String equipmentName;

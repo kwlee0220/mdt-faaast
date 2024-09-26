@@ -10,6 +10,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -38,11 +40,14 @@ import mdt.ksx9101.jpa.JpaEntityOperations;
 import mdt.ksx9101.jpa.JpaPersistenceUnitInfo;
 import mdt.model.SubmodelUtils;
 
+
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class KSX9101Persistence implements Persistence<KSX9101PersistencerConfig> {
+	private static final Logger s_logger = LoggerFactory.getLogger(KSX9101Persistence.class);
+	
 	private KSX9101PersistencerConfig m_persistConfig;
 	private final PersistenceInMemory m_basePersistence;
 	private PersistenceInMemoryConfig m_basePersistenceConfig;
@@ -58,8 +63,7 @@ public class KSX9101Persistence implements Persistence<KSX9101PersistencerConfig
 	}
 
 	@Override
-	public void init(CoreConfig coreConfig, KSX9101PersistencerConfig config,
-					ServiceContext serviceContext)
+	public void init(CoreConfig coreConfig, KSX9101PersistencerConfig config, ServiceContext serviceContext)
 		throws ConfigurationInitializationException {
 		m_persistConfig = config;
 		m_basePersistenceConfig = new PersistenceInMemoryConfig.Builder()
@@ -67,17 +71,27 @@ public class KSX9101Persistence implements Persistence<KSX9101PersistencerConfig
 															.build();
 		m_basePersistence.init(coreConfig, m_basePersistenceConfig, serviceContext);
 		
+		if ( m_persistConfig.getJpaConfig() == null ) {
+			m_persistConfig.setJpaConfig(GlobalConfigurations.loadJpaConfiguration().getOrNull());
+		}
+		if ( m_persistConfig.getJpaConfig() == null ) {
+			if ( s_logger.isInfoEnabled() ) {
+				s_logger.info("Ignore JPA-based Entities because JpaConfig is missing");
+			}
+			return;
+		}
+
 		FStream.from(m_persistConfig.getEntityConfigs())
 				.map(econf -> econf.getMountPoint().getSubmodel())
 				.forEach(m_ksx9101SubmodelIds::add);
 		
-		JPAConfiguration jpaConf = m_persistConfig.getJpaConfig();
+		JpaConfiguration jpaConf = m_persistConfig.getJpaConfig();
 		JpaPersistenceUnitInfo puInfo = new JpaPersistenceUnitInfo("mdt-ksx9101", jpaConf.getJdbc());
 		m_emFact = new HibernatePersistenceProvider().createContainerEntityManagerFactory(puInfo,
 																					jpaConf.getProperties());
 		m_ops = new JpaEntityOperations(m_persistConfig, m_emFact);
-//		
-//		
+		
+		
 //
 //		try ( EntityManager em = m_emFact.createEntityManager() ) {
 //			EntityTransaction tx = em.getTransaction();
@@ -169,7 +183,18 @@ public class KSX9101Persistence implements Persistence<KSX9101PersistencerConfig
 	@Override
 	public Page<Submodel> findSubmodels(SubmodelSearchCriteria criteria, QueryModifier modifier,
 										PagingInfo paging) {
-		throw new UnsupportedOperationException();
+		Page<Submodel> paged = m_basePersistence.findSubmodels(criteria, modifier, paging);
+		for ( Submodel submodel: paged.getContent() ) {
+			if ( !isKSX9101Submodel(submodel.getId()) ) {
+				continue;
+			}
+			
+			if ( m_ops.mount(submodel) <= 0 ) {
+				s_logger.error("Resource not found: Submodel[{}]", submodel.getId());
+			}
+		}
+		
+		return paged;
 	}
 
 	@Override
