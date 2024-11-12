@@ -36,9 +36,10 @@ import de.fraunhofer.iosb.ilt.faaast.service.persistence.SubmodelSearchCriteria;
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.memory.PersistenceInMemory;
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.memory.PersistenceInMemoryConfig;
 import jakarta.persistence.EntityManagerFactory;
+
 import mdt.ksx9101.jpa.JpaEntityOperations;
 import mdt.ksx9101.jpa.JpaPersistenceUnitInfo;
-import mdt.model.SubmodelUtils;
+import mdt.model.sm.SubmodelUtils;
 
 
 /**
@@ -91,8 +92,31 @@ public class KSX9101Persistence implements Persistence<KSX9101PersistencerConfig
 																					jpaConf.getProperties());
 		m_ops = new JpaEntityOperations(m_persistConfig, m_emFact);
 		
-		
-//
+		//
+		// Test
+		//
+//		try ( EntityManager em = m_emFact.createEntityManager() ) {
+//			for ( EntityConfiguration entConf : m_persistConfig.getEntityConfigs() ) {
+//				SubmodelElementEntity entity =  entConf.loadJpaEntity(em);
+//				if ( entity instanceof Equipment equip ) {
+//					SubmodelElement orgSme = entity.newSubmodelElement();
+//					String str = MDTModelSerDe.toJsonString(orgSme);
+//					try {
+//						SubmodelElement entity2 = MDTModelSerDe.readValue(str, SubmodelElement.class);
+//						DefaultEquipment equip2 = DefaultEquipment.from(entity2);
+//					}
+//					catch ( IOException e ) { e.printStackTrace(); }
+//					for ( ParameterValue pv: equip.getParameterValueList() ) {
+//						SubmodelElementEntity smee = (SubmodelElementEntity)pv;
+//						SubmodelElement sme = smee.newSubmodelElement();
+//					}
+//				}
+//			}
+//		}
+//		catch ( Exception e ) {
+//			e.printStackTrace();
+//		}
+
 //		try ( EntityManager em = m_emFact.createEntityManager() ) {
 //			EntityTransaction tx = em.getTransaction();
 //			tx.begin();
@@ -224,25 +248,32 @@ public class KSX9101Persistence implements Persistence<KSX9101PersistencerConfig
 		throws ResourceNotFoundException {
 		String submodelId = identifier.getSubmodelId();
 		
-		// 주어진 식별자에 해당하는 Submodel에 mount-point가 지정되지 않으면
-		// 기존의 방법으로 SubmodelElement를 구한다.
+		// Submodel 식별자가 'm_ksx9101SubmodelIds'에 등록되어 있지 않으면 KSX9101와 관련 없는 submodel이기
+		// 때문에 기존 방법으로 SubmodelElement를 구한다.
 		if ( !isKSX9101Submodel(submodelId) ) {
 			return m_basePersistence.getSubmodelElement(identifier, modifier);
 		}
 		
+		// 요청된 idShortPath를 포함하는 mount (EntityConfiguration)를 찾는다.
+		// 검색된 경우에는 검색된 mount 전체에 해당하는 top SubmodelElement를 생성하고
+		// 이 SubmodelElement부터 탐색을 수행한다.
 		String targetPath = identifier.getIdShortPath().toString();
 		EntityConfiguration cover = m_persistConfig.findCoverEntityConfiguration(targetPath);
 		if ( cover != null ) {
 			SubmodelElement root = m_ops.read(cover);
-			String relPath = SubmodelUtils.toRelativeIdShortPath(cover.getRootPathString(), targetPath);
+			String relPath = SubmodelUtils.toRelativeIdShortPath(cover.getRootPath(), targetPath);
 			return SubmodelUtils.traverse(root, relPath);
 		}
 		
+		// 요청된 idShortPath가 넓어서 하나 이상의 mount를 포함하는 경우에는
+		// 그 위치에 해당하는 최상위 SubmodelElementCollection 객체를 기존 base-persistence를 통해
+		// 획득한 이후, idShortPath에 의해 포함된 모든 mount를 읽어서 생성된 SubmodelElement들을
+		// 이 최상위 SubmodelElementCollection이 추가시킨다.
 		SubmodelElement target = m_basePersistence.getSubmodelElement(identifier, modifier);
 		for ( EntityConfiguration partConf: m_persistConfig.findSubEntityConfigurations(targetPath) ) {
 			SubmodelElement part = m_ops.read(partConf);
 			
-			String mountPointPath = partConf.getMountPoint().getParentIdShortPath();
+			String mountPointPath = partConf.getMountPoint().getIdShortPath();
 			String relPathStr = SubmodelUtils.toRelativeIdShortPath(targetPath, mountPointPath);
 			SubmodelElement mountPt = SubmodelUtils.traverse(target, relPathStr);
 			if ( mountPt instanceof SubmodelElementCollection smc ) {

@@ -11,9 +11,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import mdt.ksx9101.jpa.JpaEquipmentParameter.Key;
-import mdt.ksx9101.model.EquipmentParameter;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+import mdt.model.sm.data.EquipmentParameter;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
@@ -34,7 +34,7 @@ public class JpaEquipmentParameter extends SubmodelElementCollectionEntity
 		private String parameterId;
 	}
 	
-	@Id private String equipmentId;
+	@Id @PropertyField(idShort="EquipmentID") private String equipmentId;
 	@Id @PropertyField(idShort="ParameterID") private String parameterId;
 	@PropertyField(idShort="ParameterName") private String parameterName;
 	@PropertyField(idShort="ParameterType") private String parameterType = "String";
@@ -49,8 +49,9 @@ public class JpaEquipmentParameter extends SubmodelElementCollectionEntity
 	@PropertyField(idShort="DataCollectionPeriod")
 	private String dataCollectionPeriod;
 	
-	public JpaEquipmentParameter() {
-		super(null, "parameterId");
+	@Override
+	public String getIdShort() {
+		return this.parameterId;
 	}
 	
 	@Override

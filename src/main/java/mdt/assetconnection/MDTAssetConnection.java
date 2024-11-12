@@ -1,12 +1,17 @@
 package mdt.assetconnection;
 
 
+import java.io.IOException;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
+
+import mdt.assetconnection.operation.MDTOperationProvider;
+import mdt.assetconnection.operation.MDTOperationProviderConfig;
+import mdt.model.MDTModelSerDe;
+import mdt.model.MDTSubstitutor;
 
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AbstractAssetConnection;
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
-import mdt.assetconnection.operation.MDTOperationProvider;
-import mdt.assetconnection.operation.MDTOperationProviderConfig;
 
 /**
  *
@@ -42,7 +47,15 @@ public class MDTAssetConnection extends AbstractAssetConnection<MDTAssetConnecti
 	protected MDTOperationProvider createOperationProvider(Reference reference,
 															MDTOperationProviderConfig providerConfig)
 		throws AssetConnectionException {
-		return new MDTOperationProvider(this.serviceContext, reference, providerConfig);
+		try {
+			String jsonStr = MDTModelSerDe.toJsonString(providerConfig);
+			String substituted = MDTSubstitutor.substibute(jsonStr);
+			providerConfig = MDTModelSerDe.readValue(substituted, MDTOperationProviderConfig.class);
+			return new MDTOperationProvider(this.serviceContext, reference, providerConfig);
+		}
+		catch ( IOException e ) {
+			throw new AssetConnectionException(e);
+		}
 	}
 
 	@Override

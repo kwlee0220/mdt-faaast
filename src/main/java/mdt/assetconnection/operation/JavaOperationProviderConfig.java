@@ -52,7 +52,7 @@ public class JavaOperationProviderConfig {
 						OperationVariable[] outputVars) throws Exception {
     	try {
     		OperationProvider jop = Utilities.newInstance(this.operationClass);
-    		jop.invoke(inputVars, inoutputVars, outputVars);
+    		jop.invokeSync(inputVars, inoutputVars, outputVars);
 		}
 		catch ( AssetConnectionException e ) {
 			throw e;

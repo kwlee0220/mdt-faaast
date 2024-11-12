@@ -7,9 +7,8 @@ import jakarta.persistence.TypedQuery;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.ProductionPerformance;
-import mdt.ksx9101.model.ProductionPerformances;
-import mdt.model.SubmodelElementListEntity;
+import mdt.model.sm.data.ProductionPerformances;
+import mdt.model.sm.entity.SubmodelElementListEntity;
 
 
 /**
@@ -18,14 +17,16 @@ import mdt.model.SubmodelElementListEntity;
  */
 @Getter @Setter
 public class JpaProductionPerformances
-					extends SubmodelElementListEntity<ProductionPerformance,JpaProductionPerformance>
+					extends SubmodelElementListEntity<JpaProductionPerformance>
 					implements ProductionPerformances {
 	public JpaProductionPerformances() {
-		super("ProductionPerformances", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
+		setIdShort("ProductionPerformances");
+		setOrderRelevant(false);
+		setTypeValueListElement(AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaProductionPerformance newElementEntity() {
+	public JpaProductionPerformance newMemberEntity() {
 		return new JpaProductionPerformance();
 	}
 	
@@ -35,7 +36,7 @@ public class JpaProductionPerformances
 			JpaProductionPerformances entity = new JpaProductionPerformances();
 			TypedQuery<JpaProductionPerformance> query
 				= em.createQuery("select r from JpaProductionPerformance r", JpaProductionPerformance.class);
-			entity.setElementHandles(query.getResultList());
+			entity.setMemberList(query.getResultList());
 			
 			return entity;
 		}

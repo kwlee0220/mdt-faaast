@@ -2,9 +2,12 @@ package mdt.ksx9101.jpa;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
+import utils.func.FOption;
+import utils.func.Try;
 import utils.stream.FStream;
 
 import jakarta.persistence.CascadeType;
@@ -17,13 +20,17 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.Equipment;
-import mdt.ksx9101.model.Parameter;
-import mdt.ksx9101.model.ParameterValue;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
-import mdt.model.SMLField;
+import mdt.model.TopLevelEntity;
+import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.data.Equipment;
+import mdt.model.sm.data.Parameter;
+import mdt.model.sm.data.ParameterValue;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SMListField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
+import mdt.model.sm.value.PropertyValue;
 
 /**
  *
@@ -32,51 +39,60 @@ import mdt.model.SMLField;
 @Entity
 @Table(name="V2_EQUIPMENT")
 @Getter @Setter
-public class JpaEquipment extends SubmodelElementCollectionEntity
-							implements Equipment {
+public class JpaEquipment extends SubmodelElementCollectionEntity implements Equipment, TopLevelEntity {
 	@PropertyField(idShort="EquipmentID") @Id private String equipmentId;
 	@PropertyField(idShort="EquipmentName") private String equipmentName;
 	@PropertyField(idShort="EquipmentType") private String equipmentType;
 	@PropertyField(idShort="UseIndicator") private String useIndicator;
 
-	@SMLField(idShort="EquipmentParameters", elementClass=JpaEquipmentParameter.class)
+	@SMListField(idShort="EquipmentParameters", elementClass=JpaEquipmentParameter.class)
 	@OneToMany(cascade = CascadeType.PERSIST)
 	@JoinColumn(name="equipmentId")
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+	@JsonIgnore
 	private List<JpaEquipmentParameter> parameters = Lists.newArrayList();
 
-	@SMLField(idShort="EquipmentParameterValues", elementClass=JpaEquipmentParameterValue.class)
+	@SMListField(idShort="EquipmentParameterValues", elementClass=JpaEquipmentParameterValue.class)
 	@OneToMany(cascade = CascadeType.PERSIST)
 	@JoinColumn(name="equipmentId")
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+	@JsonIgnore
 	private List<JpaEquipmentParameterValue> parameterValues = Lists.newArrayList();
 	
 	public JpaEquipment() {
-		super("Equipment", null);
+		setIdShort("Equipment");
 	}
 
 	@Override
-	public List<Parameter> getParameters() {
-		return FStream.from(this.parameters).cast(Parameter.class).toList();
+	public List<Parameter> getParameterList() {
+		return FStream.from(this.parameters)
+						.cast(Parameter.class)
+						.toList();
 	}
 
 	@Override
-	public void setParameters(List<Parameter> parameters) {
-		this.parameters = FStream.from(parameters)
-								.cast(JpaEquipmentParameter.class)
-								.toList();
+	public List<ParameterValue> getParameterValueList() {
+		return FStream.from(this.parameterValues)
+						.cast(ParameterValue.class)
+						.toList();
 	}
 
 	@Override
-	public List<ParameterValue> getParameterValues() {
-		return FStream.from(this.parameterValues).cast(ParameterValue.class).toList();
-	}
-
-	@Override
-	public void setParameterValues(List<ParameterValue> parameterValues) {
-		this.parameterValues = FStream.from(parameterValues)
-								.cast(JpaEquipmentParameterValue.class)
-								.toList();
+	public void update(String idShortPath, Object value) {
+		List<String> pathSegs = SubmodelUtils.parseIdShortPath(idShortPath).toList();
+		
+		String seg0 = pathSegs.get(0);
+		Preconditions.checkArgument("EquipmentParameters".equals(seg0),
+									"'EquipmentParameters' is expected, but={}", seg0);
+		
+		String seg1 = pathSegs.get(1);
+		ParameterValue pvalue;
+		try {
+			int ordinal = Integer.parseInt(seg1);
+			pvalue = this.parameterValues.get(ordinal);
+		}
+		catch ( NumberFormatException e ) {
+			pvalue = Try.get(() -> getParameterValue(seg1)).getOrNull();
+		}
+		FOption.accept(pvalue, pv -> pv.setParameterValue(new PropertyValue((String)value)));
 	}
 	
 	@Override

@@ -5,9 +5,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import mdt.ksx9101.model.BOM;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+
+import mdt.model.sm.data.BOM;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
@@ -28,8 +29,9 @@ public class JpaBOM extends SubmodelElementCollectionEntity implements BOM {
 	@PropertyField(idShort="ValidStartDateTime") private String validStartDateTime;
 	@PropertyField(idShort="ValidEndDateTime") private String validEndDateTime;
 	
-	public JpaBOM() {
-		super(null, "BOMID");
+	@Override
+	public String getIdShort() {
+		return this.BOMID;
 	}
 	
 	@Override

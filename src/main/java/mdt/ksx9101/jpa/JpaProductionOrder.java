@@ -5,9 +5,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import mdt.ksx9101.model.ProductionOrder;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+
+import mdt.model.sm.data.ProductionOrder;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 /**
  *
@@ -32,8 +33,9 @@ public class JpaProductionOrder extends SubmodelElementCollectionEntity implemen
 	@PropertyField(idShort="SalesDocumentNumber") private String salesDocumentNumber;
 	@PropertyField(idShort="SalesDocumentSequence") private String salesDocumentSequence;
 	
-	public JpaProductionOrder() {
-		super(null, "productionOrderID");
+	@Override
+	public String getIdShort() {
+		return this.productionOrderID;
 	}
 	
 	@Override

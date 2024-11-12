@@ -19,11 +19,11 @@ public class JavaOperationProvider implements OperationProvider {
 	}
 	
 	@Override
-	public void invoke(OperationVariable[] inputVars, OperationVariable[] inoutputVars,
+	public void invokeSync(OperationVariable[] inputVars, OperationVariable[] inoutputVars,
 						OperationVariable[] outputVars) throws Exception {
     	try {
     		OperationProvider jop = Utilities.newInstance(m_config.getOperationClass());
-    		jop.invoke(inputVars, inoutputVars, outputVars);
+    		jop.invokeSync(inputVars, inoutputVars, outputVars);
 		}
 		catch ( AssetConnectionException e ) {
 			throw e;

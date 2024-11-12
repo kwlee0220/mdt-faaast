@@ -7,9 +7,8 @@ import jakarta.persistence.TypedQuery;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.ItemMaster;
-import mdt.ksx9101.model.ItemMasters;
-import mdt.model.SubmodelElementListEntity;
+import mdt.model.sm.data.ItemMasters;
+import mdt.model.sm.entity.SubmodelElementListEntity;
 
 
 /**
@@ -17,14 +16,16 @@ import mdt.model.SubmodelElementListEntity;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaItemMasters extends SubmodelElementListEntity<ItemMaster,JpaItemMaster>
+public class JpaItemMasters extends SubmodelElementListEntity<JpaItemMaster>
 								implements ItemMasters {
 	public JpaItemMasters() {
-		super("ItemMasters", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
+		setIdShort("ItemMasters");
+		setOrderRelevant(false);
+		setTypeValueListElement(AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaItemMaster newElementEntity() {
+	public JpaItemMaster newMemberEntity() {
 		return new JpaItemMaster();
 	}
 	
@@ -33,7 +34,7 @@ public class JpaItemMasters extends SubmodelElementListEntity<ItemMaster,JpaItem
 		public JpaItemMasters load(EntityManager em, Object key) {
 			JpaItemMasters entity = new JpaItemMasters();
 			TypedQuery<JpaItemMaster> query = em.createQuery("select r from JpaItemMaster r", JpaItemMaster.class);
-			entity.setElementHandles(query.getResultList());
+			entity.setMemberList(query.getResultList());
 			
 			return entity;
 		}

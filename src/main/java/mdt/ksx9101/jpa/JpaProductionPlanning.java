@@ -5,9 +5,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import mdt.ksx9101.model.ProductionPlanning;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+
+import mdt.model.sm.data.ProductionPlanning;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 /**
  *
@@ -26,7 +27,8 @@ public class JpaProductionPlanning extends SubmodelElementCollectionEntity
 	@PropertyField(idShort="ScheduleStartDateTime") private String scheduleStartDateTime;
 	@PropertyField(idShort="ScheduleEndDateTime") private String scheduleEndDateTime;
 	
-	public JpaProductionPlanning() {
-		super(null, "productionPlanID");
+	@Override
+	public String getIdShort() {
+		return this.productionPlanID;
 	}
 }

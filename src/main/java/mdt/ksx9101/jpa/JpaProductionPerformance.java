@@ -5,9 +5,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import mdt.ksx9101.model.ProductionPerformance;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+
+import mdt.model.sm.data.ProductionPerformance;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 /**
  *
@@ -34,8 +35,9 @@ public class JpaProductionPerformance extends SubmodelElementCollectionEntity
 	@PropertyField(idShort="ExecutionEndDateTime") private String executionEndDateTime;
 	@PropertyField(idShort="LotID") private String lotID;
 	
-	public JpaProductionPerformance() {
-		super(null, "productionPerformanceID");
+	@Override
+	public String getIdShort() {
+		return this.productionPerformanceID;
 	}
 	
 	@Override

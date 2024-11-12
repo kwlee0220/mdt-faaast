@@ -8,9 +8,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
-import mdt.ksx9101.model.LOT;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+
+import mdt.model.sm.data.LOT;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 /**
  *
@@ -40,8 +41,9 @@ public class JpaLOT extends SubmodelElementCollectionEntity implements LOT {
 	@Column(name="APPLIED_TACTTIME")
 	private Float appliedTactTime;
 	
-	public JpaLOT() {
-		super(null, "lotId");
+	@Override
+	public String getIdShort() {
+		return this.lotId;
 	}
 	
 	@Override

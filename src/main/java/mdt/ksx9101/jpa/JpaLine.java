@@ -9,9 +9,9 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.Line;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+import mdt.model.sm.data.Line;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
@@ -48,7 +48,7 @@ public class JpaLine extends SubmodelElementCollectionEntity implements Line {
 //	private List<JpaRouting> routings;
 	
 	public JpaLine() {
-		super("Line", null);
+		setIdShort("Line");
 	}
 
 //	@Override

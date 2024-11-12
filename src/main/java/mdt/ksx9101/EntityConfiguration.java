@@ -5,12 +5,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.EntityManager;
-import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 import mdt.ksx9101.jpa.JpaMDTEntityFactory;
-import mdt.model.SubmodelElementEntity;
+import mdt.model.sm.entity.SubmodelElementEntity;
 
 
 /**
@@ -19,20 +17,18 @@ import mdt.model.SubmodelElementEntity;
  */
 @Getter
 public class EntityConfiguration {
-	private String type;
-	private Object key;
-	private String idShort;
-	private MountPoint mountPoint;
+	private final String type;
+	private final Object key;
+	private final String idShort;
+	private final MountPoint mountPoint;
+	@JsonIgnore @Getter(lazy=true) private final String rootPath = calcRootPath();
 	
 	private static final JpaMDTEntityFactory FACTORY = new JpaMDTEntityFactory();
-	
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @JsonIgnore
-	private String rootPath = null;
 	
 	public EntityConfiguration(@JsonProperty("type") String type,
 								@JsonProperty("key") Object key,
 								@JsonProperty("idShort") String idShort,
-								@JsonProperty("mountPoint")MountPoint mountPoint) {
+								@JsonProperty("mountPoint") MountPoint mountPoint) {
 		this.type = type;
 		this.key = key;
 		this.idShort = idShort;
@@ -48,29 +44,30 @@ public class EntityConfiguration {
 		return (SubmodelElementEntity)loader.load(em, this.key);
 	}
 	
-	public String getRootPathString() {
-		if ( this.rootPath == null ) {
-			this.rootPath = getMountPoint().parentIdShortPath + "." + getIdShort();
-		}
-		
-		return this.rootPath;
-	}
-	
 	@Override
 	public String toString() {
 		return String.format("Entity: type=%s, key=%s, idShort=%s", getType(), getKey(), getIdShort());
 	}
 	
-	@Getter @ToString
+	private String calcRootPath() {
+		return getMountPoint().idShortPath + "." + getIdShort();
+	}
+	
+	@Getter @EqualsAndHashCode
 	public static class MountPoint {
-		private String submodel;
-		private String parentIdShortPath;
+		private final String submodel;
+		private final String idShortPath;
 		
 		@JsonCreator
 		public MountPoint(@JsonProperty("submodel") String submodel,
-							@JsonProperty("parentIdShortPath") String parentIdShortPath) {
+							@JsonProperty("idShortPath") String idShortPath) {
 			this.submodel = submodel;
-			this.parentIdShortPath = parentIdShortPath;
+			this.idShortPath = idShortPath;
+		}
+		
+		@Override
+		public String toString() {
+			return this.submodel + "/" + this.idShortPath;
 		}
 	}
 }

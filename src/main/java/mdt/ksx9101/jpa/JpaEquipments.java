@@ -11,9 +11,8 @@ import jakarta.persistence.TypedQuery;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.Equipment;
-import mdt.ksx9101.model.Equipments;
-import mdt.model.SubmodelElementListEntity;
+import mdt.model.sm.data.Equipments;
+import mdt.model.sm.entity.SubmodelElementListEntity;
 
 
 /**
@@ -21,10 +20,10 @@ import mdt.model.SubmodelElementListEntity;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaEquipments extends SubmodelElementListEntity<Equipment,JpaEquipment>
+public class JpaEquipments extends SubmodelElementListEntity<JpaEquipment>
 							implements Equipments {
 	@Override
-	public JpaEquipment newElementEntity() {
+	public JpaEquipment newMemberEntity() {
 		return new JpaEquipment();
 	}
 	
@@ -42,7 +41,7 @@ public class JpaEquipments extends SubmodelElementListEntity<Equipment,JpaEquipm
 			
 			JpaEquipments entity = new JpaEquipments();
 			TypedQuery<JpaEquipment> query = em.createQuery(jpql, JpaEquipment.class);
-			entity.setElementHandles(query.getResultList());
+			entity.setMemberList(query.getResultList());
 			
 			return entity;
 		}

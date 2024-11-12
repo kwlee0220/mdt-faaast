@@ -1,11 +1,15 @@
 package mdt.assetconnection.operation;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.function.UnaryOperator;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationVariable;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -15,7 +19,7 @@ import utils.stream.FStream;
 
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
-import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.common.provider.MultiFormatOperationProvider;
+import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetOperationProvider;
 import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ResourceNotFoundException;
 import de.fraunhofer.iosb.ilt.faaast.service.util.ReferenceHelper;
 
@@ -24,21 +28,23 @@ import de.fraunhofer.iosb.ilt.faaast.service.util.ReferenceHelper;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MDTOperationProvider extends MultiFormatOperationProvider<MDTOperationProviderConfig> {
+public class MDTOperationProvider implements AssetOperationProvider {
 	private final ServiceContext m_serviceContext;
 	private final Reference m_opRef;
 	private final List<OperationVariable> m_outputVariables;
 	private final MDTOperationProviderConfig m_config;
 	
+	private final OperationProvider m_opProvider;
+	
 	public MDTOperationProvider(ServiceContext serviceContext, Reference reference,
-								MDTOperationProviderConfig config) {
-		super(config);
-
+								MDTOperationProviderConfig config) throws AssetConnectionException {
+		Preconditions.checkArgument(config.getJava() != null
+									|| config.getProgram() != null
+									|| config.getHttp() != null,
+									"No operation provider is specified");
+		
 		m_serviceContext = serviceContext;
 		m_opRef = reference;
-		
-		Preconditions.checkArgument(config.getJava() != null || config.getProgram() != null,
-									"No operation provider is specified");
 		m_config = config;
 		
         try {
@@ -49,50 +55,70 @@ public class MDTOperationProvider extends MultiFormatOperationProvider<MDTOperat
             							ReferenceHelper.toString(m_opRef));
             throw new IllegalStateException(msg, e);
         }
-	}
-
-	@Override
-	protected OperationVariable[] getOutputParameters() {
-		return m_outputVariables.toArray(new OperationVariable[m_outputVariables.size()]);
+		
+        try {
+	    	if ( m_config.getJava() != null ) {
+	    		m_opProvider = new JavaOperationProvider(m_config.getJava());
+	    	}
+	    	else if ( m_config.getProgram() != null ) {
+				m_opProvider = new ProgramOperationProvider(serviceContext, m_config.getProgram());
+	    	}
+	    	else if ( m_config.getHttp() != null ) {
+	    		m_opProvider = new HttpOperationProvider(serviceContext, m_config.getHttp());
+	    	}
+	    	else {
+	    		throw new AssertionError();
+	    	}
+        }
+        catch ( IOException e ) {
+        	throw new AssetConnectionException(e);
+        }
 	}
 	
     @Override
     public OperationVariable[] invoke(OperationVariable[] inputVars,
-    									OperationVariable[] inoutputVars) throws AssetConnectionException {
+    								OperationVariable[] inoutputVars) throws AssetConnectionException {
 		OperationVariable[] outputVars = FStream.from(m_outputVariables)
 												.map(v -> v.getValue().getIdShort())
-												.map(this::emptyOperationVariable)
+												.map(this::emptyStringPropertyOperationVariable)
 												.toArray(OperationVariable.class);
-		
-		OperationProvider prvd = null;
-    	if ( m_config.getJava() != null ) {
-    		prvd = new JavaOperationProvider(m_config.getJava());
-    	}
-    	else if ( m_config.getProgram() != null ) {
-    		prvd = new ProgramOperationProvider(m_config.getProgram());
-    	}
-    	else {
-    		throw new AssertionError();
-    	}
 
 		try {
-			prvd.invoke(inputVars, inoutputVars, outputVars);
+			m_opProvider.invokeSync(inputVars, inoutputVars, outputVars);
+	    	return outputVars;
 		}
 		catch ( Exception e ) {
 			Throwables.throwIfInstanceOf(e, AssetConnectionException.class);
 			throw new AssetConnectionException(e);
 		}
-		
-    	return outputVars;
     }
 
-	@Override
-	protected byte[] invoke(byte[] input, UnaryOperator<String> variableReplacer)
-		throws AssetConnectionException {
-		throw new AssertionError();
-	}
+    @Override
+    public void invokeAsync(OperationVariable[] inputVars,
+							OperationVariable[] inoutputVars,
+							BiConsumer<OperationVariable[], OperationVariable[]> callbackSuccess,
+							Consumer<Throwable> callbackFailure)
+            throws AssetConnectionException {
+		OperationVariable[] outputVars = FStream.from(m_outputVariables)
+												.map(v -> v.getValue().getIdShort())
+												.map(this::emptyStringPropertyOperationVariable)
+												.toArray(OperationVariable.class);
+
+		try {
+			m_opProvider.invokeAsync(inputVars, inoutputVars, outputVars, callbackSuccess, callbackFailure);
+		}
+		catch ( Exception e ) {
+			Throwables.throwIfInstanceOf(e, AssetConnectionException.class);
+			throw new AssetConnectionException(e);
+		}
+    }
 	
-	private OperationVariable emptyOperationVariable(String idShort) {
-		return new DefaultOperationVariable.Builder().build();
+	private OperationVariable emptyStringPropertyOperationVariable(String idShort) {
+		DefaultProperty defProp = new DefaultProperty.Builder()
+													.idShort(idShort)
+													.valueType(DataTypeDefXsd.STRING)
+													.value("")
+													.build();
+		return new DefaultOperationVariable.Builder().value(defProp).build();
 	}
 }

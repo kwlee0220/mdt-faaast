@@ -1,5 +1,11 @@
 package mdt.ksx9101.jpa;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
@@ -7,9 +13,9 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.jpa.JpaOperationParameter.Key;
-import mdt.ksx9101.model.OperationParameterValue;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+import mdt.model.sm.data.OperationParameterValue;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
@@ -23,14 +29,36 @@ import mdt.model.PropertyField;
 @Getter @Setter
 public class JpaOperationParameterValue extends SubmodelElementCollectionEntity
 										implements OperationParameterValue {
-	@Id private String operationId;
+	@Id @PropertyField(idShort="OperationID") private String operationId;
 	@Id @PropertyField(idShort="ParameterID") private String parameterId;
-	@PropertyField(idShort="ParameterValue", keepNullField=true) private String parameterValue;
+	@PropertyField(idShort="ParameterValue", keepNullField=true)
+	@Column(name="parameterValue")
+	private String parameterValue;
 	@PropertyField(idShort="EventDateTime") private String eventDateTime;
 	@PropertyField(idShort="ValidationResultCode") private String validationResultCode;
 	
-	public JpaOperationParameterValue() {
-		super(null, "parameterId");
+	@Override
+	public String getIdShort() {
+		return this.parameterId;
+	}
+
+	@Override
+	public SubmodelElement getParameterValue() {
+		return new DefaultProperty.Builder()
+								.idShort("ParameterValue")
+								.value(this.parameterValue)
+								.valueType(DataTypeDefXsd.STRING)
+								.build();
+	}
+
+	@Override
+	public void setParameterValue(SubmodelElement value) {
+		if ( value instanceof Property prop ) {
+			this.parameterValue = prop.getValue();
+		}
+		else {
+			throw new IllegalArgumentException("Incompatible ParameterValue: not STRING Property: " + value);
+		}
 	}
 	
 	@Override

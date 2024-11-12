@@ -5,9 +5,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import mdt.ksx9101.model.ItemMaster;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+
+import mdt.model.sm.data.ItemMaster;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
@@ -26,8 +27,9 @@ public class JpaItemMaster extends SubmodelElementCollectionEntity implements It
 	@PropertyField(idShort="ItemUOMCode") private String itemUOMCode;
 	@PropertyField(idShort="LotSize") private String lotSize;
 	
-	public JpaItemMaster() {
-		super(null, "itemID");
+	@Override
+	public String getIdShort() {
+		return this.itemID;
 	}
 	
 	@Override

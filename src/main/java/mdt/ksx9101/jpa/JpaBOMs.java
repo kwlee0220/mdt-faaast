@@ -7,9 +7,9 @@ import jakarta.persistence.TypedQuery;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.BOM;
-import mdt.ksx9101.model.BOMs;
-import mdt.model.SubmodelElementListEntity;
+import mdt.model.sm.data.BOM;
+import mdt.model.sm.data.BOMs;
+import mdt.model.sm.entity.SubmodelElementListEntity;
 
 
 /**
@@ -17,13 +17,15 @@ import mdt.model.SubmodelElementListEntity;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaBOMs extends SubmodelElementListEntity<BOM,JpaBOM> implements BOMs {
+public class JpaBOMs extends SubmodelElementListEntity<JpaBOM> implements BOMs {
 	public JpaBOMs() {
-		super("BOMs", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
+		setIdShort("BOMs");
+		setOrderRelevant(false);
+		setTypeValueListElement(AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaBOM newElementEntity() {
+	public JpaBOM newMemberEntity() {
 		return new JpaBOM();
 	}
 	
@@ -32,7 +34,7 @@ public class JpaBOMs extends SubmodelElementListEntity<BOM,JpaBOM> implements BO
 		public JpaBOMs load(EntityManager em, Object key) {
 			JpaBOMs entity = new JpaBOMs();
 			TypedQuery<JpaBOM> query = em.createQuery("select r from JpaBOM r", JpaBOM.class);
-			entity.setElementHandles(query.getResultList());
+			entity.setMemberList(query.getResultList());
 			
 			return entity;
 		}

@@ -5,9 +5,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import mdt.ksx9101.model.Repair;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+
+import mdt.model.sm.data.Repair;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
@@ -32,8 +33,9 @@ public class JpaRepair extends SubmodelElementCollectionEntity implements Repair
 	@PropertyField(idShort="InitialDefectLevel2") private String initialDefectLevel2;
 	@PropertyField(idShort="InitialDefectLevel3") private String initialDefectLevel3;
 	
-	public JpaRepair() {
-		super(null, "repairID");
+	@Override
+	public String getIdShort() {
+		return "" + this.repairID;
 	}
 	
 	@Override

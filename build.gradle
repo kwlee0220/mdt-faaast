@@ -10,8 +10,8 @@ java {
 	sourceCompatibility = JavaVersion.VERSION_17
 	targetCompatibility = JavaVersion.VERSION_17
 	
-	withSourcesJar()
-	withJavadocJar()
+//	withSourcesJar()
+//	withJavadocJar()
 }
 	
 [compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
@@ -32,7 +32,6 @@ dependencies {
 	implementation project(":utils")
 	implementation project(":mdt-client")
 	implementation project(":faaast-lib")
-	// implementation project(":mdt-operation-http")
 
 	// Guava (from the project :utils)
 	implementation "com.google.guava:guava:${guava_version}"
@@ -42,7 +41,6 @@ dependencies {
 	annotationProcessor "org.projectlombok:lombok:${lombok_version}"
 
 	// jackson json parser
-//	implementation "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
 	implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson_version}"
 	
 	// AAS model
@@ -57,6 +55,9 @@ dependencies {
 //	implementation "de.fraunhofer.iosb.ilt.faaast.service:persistence-memory:${faaast_version}"
 //	implementation "de.fraunhofer.iosb.ilt.faaast.service:assetconnection-common:${faaast_version}"
 //	implementation "de.fraunhofer.iosb.ilt.faaast.service:starter:${faaast_version}"
+		
+	// HTTP Client
+	implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: "${okhttp_version}"
 	
 	// Hibernate
 	implementation "org.hibernate.orm:hibernate-core:${hibernate_version}"

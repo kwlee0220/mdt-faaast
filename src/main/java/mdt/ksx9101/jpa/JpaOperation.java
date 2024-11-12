@@ -5,6 +5,8 @@ import java.util.List;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
+import utils.func.FOption;
+import utils.func.Try;
 import utils.stream.FStream;
 
 import jakarta.persistence.CascadeType;
@@ -18,14 +20,18 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.Operation;
-import mdt.ksx9101.model.Parameter;
-import mdt.ksx9101.model.ParameterValue;
-import mdt.ksx9101.model.ProductionOrder;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
-import mdt.model.SMLField;
+import mdt.model.TopLevelEntity;
+import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.data.Operation;
+import mdt.model.sm.data.Parameter;
+import mdt.model.sm.data.ParameterValue;
+import mdt.model.sm.data.ProductionOrder;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SMListField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
+import mdt.model.sm.value.PropertyValue;
 
 
 /**
@@ -36,38 +42,46 @@ import mdt.model.SMLField;
 //@Table(name="operations")
 @Table(name="V2_OPERATION")
 @Getter @Setter
-public class JpaOperation extends SubmodelElementCollectionEntity implements Operation {
+public class JpaOperation extends SubmodelElementCollectionEntity implements Operation, TopLevelEntity {
 	@Id @PropertyField(idShort="OperationID") private String operationId;
 	@PropertyField(idShort="OperationName") private String operationName;
 	@PropertyField(idShort="OperationType") private String operationType;
 	@PropertyField(idShort="UseIndicator") private String useIndicator;
 
-	@SMLField(idShort="ProductionOrders", elementClass=JpaProductionOrder.class)
+	@SMListField(idShort="ProductionOrders", elementClass=JpaProductionOrder.class)
 	@OneToMany(fetch=FetchType.EAGER, mappedBy="operationID")
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
 	private List<JpaProductionOrder> productionOrders = Lists.newArrayList();
 
-	@SMLField(idShort="OperationParameters", elementClass=JpaOperationParameter.class)
+	@SMListField(idShort="OperationParameters", elementClass=JpaOperationParameter.class)
 	@OneToMany(cascade = CascadeType.PERSIST)
 	@JoinColumn(name="operationId")
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
 	private List<JpaOperationParameter> parameters;
 
-	@SMLField(idShort="OperationParameterValues", elementClass=JpaOperationParameterValue.class)
+	@SMListField(idShort="OperationParameterValues", elementClass=JpaOperationParameterValue.class)
 	@OneToMany(cascade = CascadeType.PERSIST)
 	@JoinColumn(name="operationId")
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
 	private List<JpaOperationParameterValue> parameterValues;
 	
 	public JpaOperation() {
-		super("Operation", null);
-	}
-	
-	@Override
-	public String toString() {
-		return String.format("%s[%s]", getClass().getSimpleName(), getOperationId());
+		setIdShort("Operation");
 	}
 
+	@Override
+	public List<Parameter> getParameterList() {
+		return FStream.from(this.parameters)
+						.cast(Parameter.class)
+						.toList();
+	}
+
+	@Override
+	public List<ParameterValue> getParameterValueList() {
+		return FStream.from(this.parameterValues)
+						.cast(ParameterValue.class)
+						.toList();
+	}
 	@Override
 	public List<ProductionOrder> getProductionOrders() {
 		return FStream.from(this.productionOrders).cast(ProductionOrder.class).toList();
@@ -79,29 +93,31 @@ public class JpaOperation extends SubmodelElementCollectionEntity implements Ope
 										.cast(JpaProductionOrder.class)
 										.toList();
 	}
-
+	
 	@Override
-	public List<Parameter> getParameters() {
-		return FStream.from(this.parameters).cast(Parameter.class).toList();
+	public String toString() {
+		return String.format("%s[%s]", getClass().getSimpleName(), getOperationId());
 	}
 
-	@Override
-	public void setParameters(List<Parameter> parameters) {
-		this.parameters = FStream.from(parameters)
-								.cast(JpaOperationParameter.class)
-								.toList();
-	}
 
 	@Override
-	public List<ParameterValue> getParameterValues() {
-		return FStream.from(this.parameterValues).cast(ParameterValue.class).toList();
-	}
-
-	@Override
-	public void setParameterValues(List<ParameterValue> parameterValues) {
-		this.parameterValues = FStream.from(parameterValues)
-								.cast(JpaOperationParameterValue.class)
-								.toList();
+	public void update(String idShortPath, Object value) {
+		List<String> pathSegs = SubmodelUtils.parseIdShortPath(idShortPath).toList();
+		
+		String seg0 = pathSegs.get(0);
+		Preconditions.checkArgument("OperationParameters".equals(seg0),
+									"'OperationParameters' is expected, but={}", seg0);
+		
+		String seg1 = pathSegs.get(1);
+		ParameterValue pvalue;
+		try {
+			int ordinal = Integer.parseInt(seg1);
+			pvalue = this.parameterValues.get(ordinal);
+		}
+		catch ( NumberFormatException e ) {
+			pvalue = Try.get(() -> getParameterValue(seg1)).getOrNull();
+		}
+		FOption.accept(pvalue, pv -> pv.setParameterValue(new PropertyValue((String)value)));
 	}
 	
 	public static JpaOperation load(EntityManager em, Object key) {

@@ -7,9 +7,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import mdt.ksx9101.model.Andon;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+
+import mdt.model.sm.data.Andon;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 /**
  *
@@ -35,8 +36,9 @@ public class JpaAndon extends SubmodelElementCollectionEntity implements Andon {
 	@PropertyField(idShort="EndDateTime") private String endDateTime;
 //	@PropertyField(idShort="StopDateTime") private String stopDateTime;
 	
-	public JpaAndon() {
-		super(null, "andonID");
+	@Override
+	public String getIdShort() {
+		return "" + this.andonID;
 	}
 	
 	@Override

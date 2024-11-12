@@ -11,7 +11,7 @@ import utils.func.FOption;
 import utils.stream.FStream;
 
 import lombok.experimental.UtilityClass;
-import mdt.model.AASUtils;
+import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
 
 /**
@@ -36,7 +36,7 @@ public class GlobalConfigurations {
 			
 			// 설정 파일을 tree 형태로 읽어 "persistent"에 해당하는 노드를 찾는다
 			// 찾은 sub-node를 주어진 class를 기준으로 다시 read하여 configuration 객체를 생성한다.
-			JsonMapper mapper = AASUtils.getJsonMapper();
+			JsonMapper mapper = MDTModelSerDe.getJsonMapper();
 			return  FStream.from(mapper.readTree(globalConfigFile).properties())
 							.findFirst(ent -> ent.getKey().equals("persistence"))
 							.mapOrThrow(ent -> mapper.readValue(ent.getValue().traverse(),

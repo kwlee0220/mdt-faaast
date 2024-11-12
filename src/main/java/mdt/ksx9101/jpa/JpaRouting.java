@@ -5,9 +5,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import mdt.ksx9101.model.Routing;
-import mdt.model.SubmodelElementCollectionEntity;
-import mdt.model.PropertyField;
+
+import mdt.model.sm.data.Routing;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
@@ -25,8 +26,9 @@ public class JpaRouting extends SubmodelElementCollectionEntity implements Routi
 	@PropertyField(idShort="ItemID") private String itemID;
 	@PropertyField(idShort="SetupTime") private String setupTime;
 	
-	public JpaRouting() {
-		super(null, "routingID");
+	@Override
+	public String getIdShort() {
+		return this.routingID;
 	}
 	
 	@Override

@@ -7,9 +7,8 @@ import jakarta.persistence.TypedQuery;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.ProductionPlanning;
-import mdt.ksx9101.model.ProductionPlannings;
-import mdt.model.SubmodelElementListEntity;
+import mdt.model.sm.data.ProductionPlannings;
+import mdt.model.sm.entity.SubmodelElementListEntity;
 
 
 /**
@@ -18,14 +17,16 @@ import mdt.model.SubmodelElementListEntity;
  */
 @Getter @Setter
 public class JpaProductionPlannings
-						extends SubmodelElementListEntity<ProductionPlanning,JpaProductionPlanning>
+						extends SubmodelElementListEntity<JpaProductionPlanning>
 						implements ProductionPlannings {
 	public JpaProductionPlannings() {
-		super("ProductionPlannings", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
+		setIdShort("ProductionPlannings");
+		setOrderRelevant(false);
+		setTypeValueListElement(AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaProductionPlanning newElementEntity() {
+	public JpaProductionPlanning newMemberEntity() {
 		return new JpaProductionPlanning();
 	}
 	
@@ -35,7 +36,7 @@ public class JpaProductionPlannings
 			JpaProductionPlannings entity = new JpaProductionPlannings();
 			TypedQuery<JpaProductionPlanning> query
 					= em.createQuery("select r from JpaProductionPlanning r", JpaProductionPlanning.class);
-			entity.setElementHandles(query.getResultList());
+			entity.setMemberList(query.getResultList());
 			
 			return entity;
 		}

@@ -5,7 +5,7 @@ import java.util.Map;
 import com.google.common.collect.Maps;
 
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.model.SubmodelElementEntity;
+import mdt.model.sm.entity.SubmodelElementEntity;
 
 
 /**
@@ -17,7 +17,6 @@ public class JpaMDTEntityFactory {
 	
 	public JpaMDTEntityFactory() {
 		FQCN_TO_ADAPTORS.put(JpaEquipment.class.getName(), new JpaEquipment.Loader());
-		FQCN_TO_ADAPTORS.put(JpaEquipments.class.getName(), new JpaEquipments.Loader());
 		FQCN_TO_ADAPTORS.put(JpaOperation.class.getName(), new JpaOperation.Loader());
 		FQCN_TO_ADAPTORS.put(JpaLine.class.getName(), new JpaLine.Loader());
 		FQCN_TO_ADAPTORS.put(JpaProductionPlannings.class.getName(), new JpaProductionPlannings.Loader());

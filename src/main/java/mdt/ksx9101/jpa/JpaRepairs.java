@@ -7,9 +7,8 @@ import jakarta.persistence.TypedQuery;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.Repair;
-import mdt.ksx9101.model.Repairs;
-import mdt.model.SubmodelElementListEntity;
+import mdt.model.sm.data.Repairs;
+import mdt.model.sm.entity.SubmodelElementListEntity;
 
 
 /**
@@ -17,13 +16,15 @@ import mdt.model.SubmodelElementListEntity;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaRepairs extends SubmodelElementListEntity<Repair,JpaRepair> implements Repairs {
+public class JpaRepairs extends SubmodelElementListEntity<JpaRepair> implements Repairs {
 	public JpaRepairs() {
-		super("Repairs", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
+		setIdShort("Repairs");
+		setOrderRelevant(false);
+		setTypeValueListElement(AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaRepair newElementEntity() {
+	public JpaRepair newMemberEntity() {
 		return new JpaRepair();
 	}
 	
@@ -32,7 +33,7 @@ public class JpaRepairs extends SubmodelElementListEntity<Repair,JpaRepair> impl
 		public JpaRepairs load(EntityManager em, Object key) {
 			JpaRepairs entity = new JpaRepairs();
 			TypedQuery<JpaRepair> query = em.createQuery("select r from JpaRepair r", JpaRepair.class);
-			entity.setElementHandles(query.getResultList());
+			entity.setMemberList(query.getResultList());
 			
 			return entity;
 		}

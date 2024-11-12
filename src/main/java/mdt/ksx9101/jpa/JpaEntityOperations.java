@@ -14,12 +14,13 @@ import utils.stream.FStream;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
+
 import mdt.ksx9101.EntityConfiguration;
 import mdt.ksx9101.KSX9101PersistencerConfig;
-import mdt.model.SubmodelElementEntity;
 import mdt.model.ResourceAlreadyExistsException;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.SubmodelUtils;
+import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.entity.SubmodelElementEntity;
 
 
 /**
@@ -49,6 +50,7 @@ public class JpaEntityOperations {
 		}
 	}
 	
+	// 
 	public SubmodelElement read(EntityConfiguration entityConf) {
 		try ( EntityManager em = m_emf.createEntityManager() ) {
 			EntityTransaction tx = em.getTransaction();
@@ -90,28 +92,30 @@ public class JpaEntityOperations {
 	}
 	
 	private SubmodelElement read(EntityManager em, EntityConfiguration entityConf) {
-		SubmodelElementEntity adaptor = entityConf.loadJpaEntity(em);
-		if ( adaptor == null ) {
+		// entityConf에 해당하는 top-level SubmodelElementEntity를 생성하고,
+		// 이를 이용하여 top-level SubmodelElement를 얻는다.
+		SubmodelElementEntity entity = entityConf.loadJpaEntity(em);
+		if ( entity == null ) {
 			if ( s_logger.isInfoEnabled() ) {
 				s_logger.info("Failed to find TopEntity: {}", entityConf);
 			}
 			throw new ResourceNotFoundException("TopEntity", entityConf.toString());
 		}
 		
-		SubmodelElement sme = adaptor.toAasModel();
+		SubmodelElement sme = entity.newSubmodelElement();
 		return sme;
 	}
 	
 	private void mountSubmodelElement(EntityConfiguration config, Submodel initialModel,
 										SubmodelElement extElm) throws ResourceNotFoundException {
-		String parentIdShort = config.getMountPoint().getParentIdShortPath();
+		String parentIdShort = config.getMountPoint().getIdShortPath();
 		if ( parentIdShort == null || parentIdShort.trim().length() == 0 ) {
 			List<SubmodelElement> children = initialModel.getSubmodelElements();
 			children.add(extElm);
 		}
 		else {
 			SubmodelElement parent = SubmodelUtils.traverse(initialModel,
-															config.getMountPoint().getParentIdShortPath());
+															config.getMountPoint().getIdShortPath());
 			if ( parent instanceof SubmodelElementCollection smec ) {
 				List<SubmodelElement> children = smec.getValue();
 				if ( Funcs.exists(children, c -> c.getIdShort().equals(config.getType())) ) {
@@ -128,7 +132,7 @@ public class JpaEntityOperations {
 //			}
 			else {
 				throw new IllegalArgumentException("parent idShortPath: "
-													+ config.getMountPoint().getParentIdShortPath());
+													+ config.getMountPoint().getIdShortPath());
 			}
 		}
 	}

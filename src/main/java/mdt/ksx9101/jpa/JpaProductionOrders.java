@@ -7,9 +7,8 @@ import jakarta.persistence.TypedQuery;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.ksx9101.model.ProductionOrder;
-import mdt.ksx9101.model.ProductionOrders;
-import mdt.model.SubmodelElementListEntity;
+import mdt.model.sm.data.ProductionOrders;
+import mdt.model.sm.entity.SubmodelElementListEntity;
 
 
 /**
@@ -17,14 +16,16 @@ import mdt.model.SubmodelElementListEntity;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class JpaProductionOrders extends SubmodelElementListEntity<ProductionOrder,JpaProductionOrder>
+public class JpaProductionOrders extends SubmodelElementListEntity<JpaProductionOrder>
 									implements ProductionOrders {
 	public JpaProductionOrders() {
-		super("ProductionOrders", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
+		setIdShort("ProductionOrders");
+		setOrderRelevant(false);
+		setTypeValueListElement(AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public JpaProductionOrder newElementEntity() {
+	public JpaProductionOrder newMemberEntity() {
 		return new JpaProductionOrder();
 	}
 	
@@ -34,7 +35,7 @@ public class JpaProductionOrders extends SubmodelElementListEntity<ProductionOrd
 			JpaProductionOrders entity = new JpaProductionOrders();
 			TypedQuery<JpaProductionOrder> query
 					= em.createQuery("select r from JpaProductionOrder r", JpaProductionOrder.class);
-			entity.setElementHandles(query.getResultList());
+			entity.setMemberList(query.getResultList());
 			
 			return entity;
 		}
