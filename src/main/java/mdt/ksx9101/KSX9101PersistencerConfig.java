@@ -6,12 +6,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 
-import utils.func.Funcs;
+import lombok.Getter;
+import lombok.Setter;
+
 import utils.stream.FStream;
 
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.PersistenceConfig;
-import lombok.Getter;
-import lombok.Setter;
 
 
 /**
@@ -37,9 +37,9 @@ public class KSX9101PersistencerConfig extends PersistenceConfig<KSX9101Persiste
 	}
 	
 	public EntityConfiguration findCoverEntityConfiguration(String pathStr) {
-		return Funcs.findFirst(this.entityConfigs,
-								conf -> pathStr.startsWith(conf.getRootPath()))
-					.getOrNull();
+		return FStream.from(this.entityConfigs)
+						.findFirst(conf -> pathStr.startsWith(conf.getRootPath()))
+						.getOrNull();
 	}
 
     private abstract static class AbstractBuilder<T extends KSX9101PersistencerConfig,

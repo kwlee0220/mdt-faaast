@@ -1,6 +1,5 @@
 package mdt.assetconnection;
 
-
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionConfig;
 import mdt.assetconnection.operation.MDTOperationProviderConfig;
 

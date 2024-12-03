@@ -22,24 +22,33 @@ public class HttpOperationProviderConfig {
 	private final String endpoint;
 	private final String opId;
 	private final Duration pollInterval;
+	private final Duration timeout;
 	
 	@JsonCreator
 	public HttpOperationProviderConfig(@JsonProperty("endpoint") String endpoint,
 										@JsonProperty("opId") String opId,
-										@JsonProperty("pollInterval") String pollInterval) {
+										@JsonProperty("pollInterval") String pollInterval,
+										@JsonProperty("timeout") String timeout) {
 		this.endpoint = endpoint;
 		this.opId = opId;
 		this.pollInterval = UnitUtils.parseDuration(pollInterval);
+		this.timeout = UnitUtils.parseDuration(timeout);
 	}
 	
 	@JsonProperty("pollInterval")
-	public String getpollIntervalAsString() {
+	public String getPollIntervalAsString() {
 		return this.pollInterval.toString();
+	}
+	
+	@JsonProperty("timeout")
+	public String getTimeoutAsString() {
+		return this.timeout.toString();
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("HttpOperation[server=%s, opId=%s, poll=%s]",
-								this.endpoint, this.opId, this.pollInterval);
+		String timeoutStr = (this.timeout != null) ? String.format(", timeout=%s", this.timeout) : "";
+		return String.format("HttpOperation[server=%s, opId=%s, poll=%s%s]",
+								this.endpoint, this.opId, this.pollInterval, timeoutStr);
 	}
 }

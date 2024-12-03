@@ -46,7 +46,9 @@ dependencies {
 	// AAS model
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-json:${aas4j_version}"
 	
-	implementation "commons-beanutils:commons-beanutils:${commons_beanutils_version}"
+	implementation ("commons-beanutils:commons-beanutils:${commons_beanutils_version}") {
+		exclude group: 'commons-logging', module: 'commons-logging'
+	}
 		
 	// picocli command line parser
 	implementation "info.picocli:picocli:${picocli_version}"

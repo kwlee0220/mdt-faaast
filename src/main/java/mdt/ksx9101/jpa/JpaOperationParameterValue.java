@@ -5,17 +5,20 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
 
+import lombok.Getter;
+import lombok.Setter;
+
+import mdt.ksx9101.jpa.JpaOperationParameter.Key;
+import mdt.model.sm.data.OperationParameterValue;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SMElementField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
-import mdt.ksx9101.jpa.JpaOperationParameter.Key;
-import mdt.model.sm.data.OperationParameterValue;
-import mdt.model.sm.entity.PropertyField;
-import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
@@ -31,11 +34,13 @@ public class JpaOperationParameterValue extends SubmodelElementCollectionEntity
 										implements OperationParameterValue {
 	@Id @PropertyField(idShort="OperationID") private String operationId;
 	@Id @PropertyField(idShort="ParameterID") private String parameterId;
-	@PropertyField(idShort="ParameterValue", keepNullField=true)
-	@Column(name="parameterValue")
-	private String parameterValue;
+	@SMElementField(idShort="ParameterValue") @Column(name="parameterValue") private String parameterValue;
 	@PropertyField(idShort="EventDateTime") private String eventDateTime;
 	@PropertyField(idShort="ValidationResultCode") private String validationResultCode;
+	
+	public JpaOperationParameterValue() {
+		setSemanticId(SEMANTIC_ID_REFERENCE);
+	}
 	
 	@Override
 	public String getIdShort() {

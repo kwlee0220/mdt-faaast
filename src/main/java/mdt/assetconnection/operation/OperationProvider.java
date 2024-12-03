@@ -21,8 +21,8 @@ import mdt.task.TaskException;
  */
 public interface OperationProvider {
 	public void invokeSync(OperationVariable[] inputVars,
-						OperationVariable[] inoutputVars,
-						OperationVariable[] outputVars) throws Exception;
+							OperationVariable[] inoutputVars,
+							OperationVariable[] outputVars) throws Exception;
 
 	public default void invokeAsync(OperationVariable[] inputVars,
 									OperationVariable[] inoutputVars,
@@ -32,7 +32,7 @@ public interface OperationProvider {
 		CompletableFuture.runAsync(() -> {
 			try {
 				this.invokeSync(inputVars, inoutputVars, outputVars);
-				Try.run(() -> callbackSuccess.accept(inoutputVars, outputVars));
+				Try.run(() -> callbackSuccess.accept(outputVars, inoutputVars));
 			}
 			catch ( Exception e ) {
 				Throwable cause = Throwables.unwrapThrowable(e);

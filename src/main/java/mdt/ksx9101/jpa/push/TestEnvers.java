@@ -6,9 +6,11 @@ import org.hibernate.jpa.HibernatePersistenceProvider;
 
 import com.google.common.collect.Maps;
 
+import utils.jdbc.JdbcConfiguration;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import mdt.ksx9101.JdbcConfiguration;
+
 import mdt.ksx9101.jpa.JpaPersistenceUnitInfo;
 
 /**

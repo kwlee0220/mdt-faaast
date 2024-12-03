@@ -5,21 +5,13 @@ import java.util.List;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
-import utils.func.FOption;
-import utils.func.Try;
-import utils.stream.FStream;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+
+import utils.func.FOption;
+import utils.func.Try;
+import utils.stream.FStream;
 
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.model.TopLevelEntity;
@@ -32,6 +24,15 @@ import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SMListField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 import mdt.model.sm.value.PropertyValue;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 
 /**
@@ -57,13 +58,13 @@ public class JpaOperation extends SubmodelElementCollectionEntity implements Ope
 	@OneToMany(cascade = CascadeType.PERSIST)
 	@JoinColumn(name="operationId")
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
-	private List<JpaOperationParameter> parameters;
+	private List<JpaOperationParameter> parameterList;
 
 	@SMListField(idShort="OperationParameterValues", elementClass=JpaOperationParameterValue.class)
 	@OneToMany(cascade = CascadeType.PERSIST)
 	@JoinColumn(name="operationId")
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
-	private List<JpaOperationParameterValue> parameterValues;
+	private List<JpaOperationParameterValue> parameterValueList;
 	
 	public JpaOperation() {
 		setIdShort("Operation");
@@ -71,14 +72,14 @@ public class JpaOperation extends SubmodelElementCollectionEntity implements Ope
 
 	@Override
 	public List<Parameter> getParameterList() {
-		return FStream.from(this.parameters)
+		return FStream.from(this.parameterList)
 						.cast(Parameter.class)
 						.toList();
 	}
 
 	@Override
 	public List<ParameterValue> getParameterValueList() {
-		return FStream.from(this.parameterValues)
+		return FStream.from(this.parameterValueList)
 						.cast(ParameterValue.class)
 						.toList();
 	}
@@ -112,7 +113,7 @@ public class JpaOperation extends SubmodelElementCollectionEntity implements Ope
 		ParameterValue pvalue;
 		try {
 			int ordinal = Integer.parseInt(seg1);
-			pvalue = this.parameterValues.get(ordinal);
+			pvalue = this.parameterValueList.get(ordinal);
 		}
 		catch ( NumberFormatException e ) {
 			pvalue = Try.get(() -> getParameterValue(seg1)).getOrNull();

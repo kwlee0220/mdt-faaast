@@ -5,13 +5,12 @@ import java.io.IOException;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 
+import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AbstractAssetConnection;
+import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
 import mdt.assetconnection.operation.MDTOperationProvider;
 import mdt.assetconnection.operation.MDTOperationProviderConfig;
 import mdt.model.MDTModelSerDe;
 import mdt.model.MDTSubstitutor;
-
-import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AbstractAssetConnection;
-import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
 
 /**
  *

@@ -36,7 +36,7 @@ import de.fraunhofer.iosb.ilt.faaast.service.persistence.SubmodelSearchCriteria;
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.memory.PersistenceInMemory;
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.memory.PersistenceInMemoryConfig;
 import jakarta.persistence.EntityManagerFactory;
-
+import mdt.MDTGlobalConfigurations;
 import mdt.ksx9101.jpa.JpaEntityOperations;
 import mdt.ksx9101.jpa.JpaPersistenceUnitInfo;
 import mdt.model.sm.SubmodelUtils;
@@ -73,7 +73,7 @@ public class KSX9101Persistence implements Persistence<KSX9101PersistencerConfig
 		m_basePersistence.init(coreConfig, m_basePersistenceConfig, serviceContext);
 		
 		if ( m_persistConfig.getJpaConfig() == null ) {
-			m_persistConfig.setJpaConfig(GlobalConfigurations.loadJpaConfiguration().getOrNull());
+			m_persistConfig.setJpaConfig(MDTGlobalConfigurations.loadJpaConfiguration().getOrNull());
 		}
 		if ( m_persistConfig.getJpaConfig() == null ) {
 			if ( s_logger.isInfoEnabled() ) {

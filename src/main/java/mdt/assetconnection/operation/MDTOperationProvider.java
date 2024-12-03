@@ -58,13 +58,13 @@ public class MDTOperationProvider implements AssetOperationProvider {
 		
         try {
 	    	if ( m_config.getJava() != null ) {
-	    		m_opProvider = new JavaOperationProvider(m_config.getJava());
+	    		m_opProvider = new JavaOperationProvider(serviceContext, m_opRef, m_config.getJava());
 	    	}
 	    	else if ( m_config.getProgram() != null ) {
-				m_opProvider = new ProgramOperationProvider(serviceContext, m_config.getProgram());
+				m_opProvider = new ProgramOperationProvider(serviceContext, m_opRef, m_config.getProgram());
 	    	}
 	    	else if ( m_config.getHttp() != null ) {
-	    		m_opProvider = new HttpOperationProvider(serviceContext, m_config.getHttp());
+	    		m_opProvider = new HttpOperationProvider(serviceContext, m_opRef, m_config.getHttp());
 	    	}
 	    	else {
 	    		throw new AssertionError();
@@ -85,6 +85,7 @@ public class MDTOperationProvider implements AssetOperationProvider {
 
 		try {
 			m_opProvider.invokeSync(inputVars, inoutputVars, outputVars);
+			
 	    	return outputVars;
 		}
 		catch ( Exception e ) {

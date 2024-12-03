@@ -1,24 +1,21 @@
 package mdt.assetconnection.operation;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
+import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.KeyValue;
-import utils.func.Try;
 import utils.stream.FStream;
 
+import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
+import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
 import mdt.client.operation.OperationUtils;
-import mdt.model.MDTModelSerDe;
-import mdt.model.sm.value.ElementValues;
 import mdt.task.Parameter;
 import mdt.task.builtin.HttpTask;
-
-import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 
 
 /**
@@ -32,31 +29,38 @@ class HttpOperationProvider implements OperationProvider {
 	private final ServiceContext m_svcContext;
 	private final HttpOperationProviderConfig m_config;
 	
-	HttpOperationProvider(ServiceContext context, HttpOperationProviderConfig config) {
+	HttpOperationProvider(ServiceContext context, Reference operationRef, HttpOperationProviderConfig config) {
 		m_svcContext = context;
 		m_config = config;
 		
 		if ( s_logger.isInfoEnabled() ) {
-			s_logger.info("Loading HttpOperation Executor: config={}", m_config);
+			IdShortPath idShortPath = IdShortPath.fromReference(operationRef);
+			s_logger.info("Operation: Http ({}), id={}, poll={}, op-ref={}",
+							m_config.getEndpoint(), m_config.getOpId(), m_config.getPollInterval(), idShortPath);
 		}
 	}
 	
 	@Override
 	public void invokeSync(OperationVariable[] inputVars, OperationVariable[] inoutputVars,
 							OperationVariable[] outputVars) throws Exception {
-		HttpTask task = new HttpTask(m_config.getEndpoint(), m_config.getOpId(), m_config.getPollInterval(),
-									false, null);
+		HttpTask.Builder builder = HttpTask.builder()
+											.serverEndpoint(m_config.getEndpoint())
+											.operationId(m_config.getOpId())
+											.pollInterval(m_config.getPollInterval())
+											.timeout(m_config.getTimeout())
+											.sync(true);
+		FStream.of(inputVars).map(OperationUtils::toParameter).forEach(builder::addInputParameter);
+		FStream.of(inoutputVars).map(OperationUtils::toParameter).forEach(builder::addInputParameter);
+		FStream.of(outputVars).map(OperationUtils::toParameter).forEach(builder::addOutputParameter);
+		FStream.of(inoutputVars).map(OperationUtils::toParameter).forEach(builder::addOutputParameter);
+		HttpTask task = builder.build();
 		
-		FStream.of(inputVars).map(OperationUtils::toParameter).forEach(task::addOrReplaceInputParameter);
-		FStream.of(inoutputVars).map(OperationUtils::toParameter).forEach(task::addOrReplaceOutputParameter);
-		FStream.of(outputVars).map(OperationUtils::toParameter).forEach(task::addOrReplaceOutputParameter);
-		
-		List<Parameter> outputValues = task.run();
+		List<Parameter> result = task.run();
 		if ( s_logger.isInfoEnabled() ) {
-			s_logger.info("HttpOperation terminates: result=" + outputValues);
+			s_logger.info("HttpOperation terminates: result=" + result);
 		}
 		
-		updateOutputVariables(inoutputVars, outputVars, outputValues);
+		updateOutputVariables(result, inoutputVars, outputVars);
 	}
 	
 //	public void invokeAsync(OperationVariable[] inputVars,
@@ -104,25 +108,21 @@ class HttpOperationProvider implements OperationProvider {
 //		task.start();
 //	}
 	
-	private void updateOutputVariables(OperationVariable[] inoutputVars, OperationVariable[] outputVars,
-										List<Parameter> outputValues) {
-		Map<String,SubmodelElement> outValues = FStream.from(outputValues)
-														.toKeyValueStream(p -> KeyValue.of(p.getName(), p.getElement()))
-														.toMap();
+	private void updateOutputVariables(List<Parameter> result, OperationVariable[] inoutputVars,
+										OperationVariable[] outputVars) {
 		FStream.of(inoutputVars)
 				.concatWith(FStream.of(outputVars))
-				.forEach(var -> {
-					SubmodelElement oldSme = var.getValue();
-					SubmodelElement outValue = outValues.get(oldSme.getIdShort());
-					if ( outValue != null ) {
-						try {
-							ElementValues.update(oldSme, ElementValues.getValue(outValue));
-						}
-						catch ( Throwable e1 ) {
-							String value = Try.get(() -> MDTModelSerDe.toJsonString(outValue)).getOrElse("failed");
-							s_logger.error("(HttpOperation) failed to update output[{}]: {}",
-											var.getValue().getIdShort(), value);
-						}
+				.innerJoin(FStream.from(result), opv -> opv.getValue().getIdShort(), Parameter::getName)
+				.forEach(match -> {
+					OperationVariable outVar = match._1;
+					Parameter param = match._2;
+					
+					try {
+						SubmodelElement resultSme = param.getReference().read();
+						outVar.setValue(resultSme);
+					}
+					catch ( IOException e ) {
+						s_logger.error("(HttpOperation) failed to update output[{}]", param.getName());
 					}
 				});
 	}
