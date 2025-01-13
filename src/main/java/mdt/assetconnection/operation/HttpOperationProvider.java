@@ -1,7 +1,6 @@
 package mdt.assetconnection.operation;
 
-import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
@@ -9,13 +8,14 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import utils.KeyValue;
 import utils.stream.FStream;
+
+import mdt.client.operation.OperationUtils;
+import mdt.task.builtin.HttpTask;
 
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
-import mdt.client.operation.OperationUtils;
-import mdt.task.Parameter;
-import mdt.task.builtin.HttpTask;
 
 
 /**
@@ -55,7 +55,7 @@ class HttpOperationProvider implements OperationProvider {
 		FStream.of(inoutputVars).map(OperationUtils::toParameter).forEach(builder::addOutputParameter);
 		HttpTask task = builder.build();
 		
-		List<Parameter> result = task.run();
+		Map<String,SubmodelElement> result = task.run();
 		if ( s_logger.isInfoEnabled() ) {
 			s_logger.info("HttpOperation terminates: result=" + result);
 		}
@@ -108,22 +108,16 @@ class HttpOperationProvider implements OperationProvider {
 //		task.start();
 //	}
 	
-	private void updateOutputVariables(List<Parameter> result, OperationVariable[] inoutputVars,
+	private void updateOutputVariables(Map<String,SubmodelElement> result, OperationVariable[] inoutputVars,
 										OperationVariable[] outputVars) {
 		FStream.of(inoutputVars)
 				.concatWith(FStream.of(outputVars))
-				.innerJoin(FStream.from(result), opv -> opv.getValue().getIdShort(), Parameter::getName)
+				.innerJoin(FStream.from(result), opv -> opv.getValue().getIdShort(), KeyValue::key)
 				.forEach(match -> {
 					OperationVariable outVar = match._1;
-					Parameter param = match._2;
-					
-					try {
-						SubmodelElement resultSme = param.getReference().read();
-						outVar.setValue(resultSme);
-					}
-					catch ( IOException e ) {
-						s_logger.error("(HttpOperation) failed to update output[{}]", param.getName());
-					}
+					KeyValue<String,SubmodelElement> outValue = match._2;
+
+					outVar.setValue(outValue.value());
 				});
 	}
 }

@@ -1,14 +1,20 @@
 package mdt;
 
+import java.io.IOException;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.google.common.base.Preconditions;
 
+import utils.InternalException;
+
 import mdt.aas.DataType;
 import mdt.aas.DataTypes;
+import mdt.model.MDTModelSerDe;
 import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.value.ElementValues;
 
 
 /**
@@ -16,29 +22,22 @@ import mdt.model.sm.SubmodelUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public class ElementHandle {
-	private final String m_submodelIdShort;
 	private final String m_path;
 
 	// 초기화 (init) 과정에서 설정됨
-	private FaaastRuntime m_faaast = null;
-	private volatile String m_submodelId = null;
-	private volatile SubmodelElement m_element = null;
+	private Submodel m_submodel;
 	@SuppressWarnings("rawtypes")
 	private volatile DataType m_type = null;
 	
-	public ElementHandle(String submodel, String path) {
-		m_submodelIdShort = submodel;
+	public ElementHandle(String path) {
 		m_path = path;
 	}
 	
-	public void init(FaaastRuntime rt) {
-		m_faaast = rt;
-
-		Submodel sm = m_faaast.getSubmodelByIdShort(m_submodelIdShort);
-		m_submodelId = sm.getId();
-		m_element = SubmodelUtils.traverse(sm, m_path);
+	public void initialize(Submodel submodel) {
+		m_submodel = submodel;
 		
-		if ( m_element instanceof Property prop ) {
+		SubmodelElement element = SubmodelUtils.traverse(submodel, m_path);
+		if ( element instanceof Property prop ) {
 			m_type = DataTypes.fromAas4jDatatype(prop.getValueType());
 		}
 		else {
@@ -48,20 +47,15 @@ public class ElementHandle {
 	
 	public String getSubmodelId() {
 		assertInitialized();
-		return m_submodelId;
+		return m_submodel.getId();
 	}
 	
 	public String getSubmodelIdShort() {
-		return m_submodelIdShort;
+		return m_submodel.getIdShort();
 	}
 
 	public String getElementPath() {
 		return m_path;
-	}
-	
-	public SubmodelElement getElement() {
-		assertInitialized();	
-		return m_faaast.getSubmodelElementByPath(m_submodelId, m_path);
 	}
 	
 	@SuppressWarnings("rawtypes")
@@ -70,12 +64,40 @@ public class ElementHandle {
 		return m_type;
 	}
 	
+	@SuppressWarnings("unchecked")
+	public void update(SubmodelElement buffer, Object value) {
+		if ( m_type != null ) {
+			((Property)buffer).setValue(m_type.toValueString(value));
+		}
+		else {
+			try {
+				ElementValues.updateWithRawString(buffer, (String)value);
+			}
+			catch ( IOException e ) {
+				String msg = String.format("Failed to update %s with value=%s", this, value);
+				throw new InternalException(msg, e);
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Object toJdbcObject(SubmodelElement element) {
+		if ( element instanceof Property prop ) {
+			Object propValue = m_type.parseValueString(prop.getValue());
+			return m_type.toJdbcObject(propValue);
+		}
+		else {
+			return MDTModelSerDe.toJsonString(ElementValues.getValue(element));
+		}
+	}
+	
 	@Override
 	public String toString() {
-		return String.format("AssetVariable[%s/%s]", m_submodelIdShort, m_path);
+		String initStr = (m_submodel != null) ? "initialized" : "uninitialized";
+		return String.format("AssetVariable[%s/%s, %s]", m_submodel.getIdShort(), m_path, initStr);
 	}
 	
 	private void assertInitialized() {
-		Preconditions.checkState(m_faaast != null, "Not initialized: {}", this);
+		Preconditions.checkState(m_submodel != null, "Not initialized: {}", this);
 	}
 }

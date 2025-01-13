@@ -5,15 +5,10 @@ import java.time.Duration;
 import java.time.Instant;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
+import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import utils.jdbc.JdbcProcessor;
-
-import mdt.FaaastRuntime;
-import mdt.model.MDTModelSerDe;
-import mdt.model.MDTSubstitutor;
-import mdt.model.ReferenceUtils;
-import mdt.model.ResourceNotFoundException;
 
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
@@ -23,6 +18,12 @@ import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValueMappingExcepti
 import de.fraunhofer.iosb.ilt.faaast.service.model.value.DataElementValue;
 import de.fraunhofer.iosb.ilt.faaast.service.model.value.mapper.ElementValueMapper;
 import de.fraunhofer.iosb.ilt.faaast.service.util.ReferenceHelper;
+import mdt.FaaastRuntime;
+import mdt.model.MDTModelSerDe;
+import mdt.model.MDTSubstitutor;
+import mdt.model.ReferenceUtils;
+import mdt.model.ResourceNotFoundException;
+import mdt.persistence.JdbcAssetParameter;
 
 /**
  *
@@ -30,7 +31,7 @@ import de.fraunhofer.iosb.ilt.faaast.service.util.ReferenceHelper;
  */
 public class DefaultJdbcValueProvider implements AssetValueProvider {
 	private final DefaultJdbcValueProviderConfig m_config;
-	private final JdbcAssetVariable m_variable;
+	private final JdbcAssetParameter m_variable;
 	private Instant m_lastAccessTime;
 
 	public DefaultJdbcValueProvider(ServiceContext serviceContext, Reference reference,
@@ -47,10 +48,12 @@ public class DefaultJdbcValueProvider implements AssetValueProvider {
 		config = MDTModelSerDe.readValue(substituted, DefaultJdbcValueProviderConfig.class);
 
 		FaaastRuntime faaast = new FaaastRuntime(serviceContext);
-		String smIdShort = faaast.getSubmodelById(submodelId).getIdShort();
-		m_variable = new JdbcAssetVariable(smIdShort, path, config.getReadQuery(), config.getUpdateQuery());
-		m_variable.initialize(faaast);
-		m_variable.setJdbcProcessor(jdbc);
+		Submodel submodel = faaast.getSubmodelById(submodelId);
+		String smIdShort = submodel.getIdShort();
+		m_variable = null;
+//		m_variable = new JdbcAssetParameter(path, config.getReadQuery(), config.getUpdateQuery());
+//		m_variable.initialize(submodel);
+//		m_variable.setJdbcProcessor(jdbc);
 		
 		m_lastAccessTime = Instant.now().minus(Duration.ofDays(1));
 	}
@@ -58,11 +61,12 @@ public class DefaultJdbcValueProvider implements AssetValueProvider {
 	@Override
 	public DataElementValue getValue() throws AssetConnectionException {
 		try {
-			SubmodelElement element = m_variable.getElementBuffer();
+//			SubmodelElement element = m_variable.getElementBuffer();
+			SubmodelElement element = null;
 			if ( m_config.getValidPeriod() != null ) {
 				Instant now = Instant.now();
-				if ( Duration.between(m_lastAccessTime, Instant.now()).compareTo(m_config.getValidPeriod()) > 0 ) {
-					element = m_variable.read();
+				if ( Duration.between(m_lastAccessTime, now).compareTo(m_config.getValidPeriod()) > 0 ) {
+					m_variable.load(null, null);
 					m_lastAccessTime = now;
 				}
 			}
@@ -78,8 +82,8 @@ public class DefaultJdbcValueProvider implements AssetValueProvider {
 	@Override
 	public void setValue(DataElementValue value) throws AssetConnectionException {
 		try {
-			ElementValueMapper.setValue(m_variable.getElementBuffer(), value);
-			m_variable.write();
+			ElementValueMapper.setValue(null, value);
+			m_variable.save(null, null);
 			
 			m_lastAccessTime = Instant.now();
 		}

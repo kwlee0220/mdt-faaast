@@ -15,19 +15,20 @@ import org.slf4j.LoggerFactory;
 import utils.InternalException;
 import utils.KeyValue;
 import utils.async.CommandExecution;
-import utils.async.CommandExecution.FileVariable;
-import utils.async.CommandExecution.Variable;
+import utils.async.CommandVariable;
+import utils.async.CommandVariable.FileVariable;
 import utils.io.FileUtils;
 import utils.io.IOUtils;
 import utils.stream.FStream;
 
-import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
-import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
 import mdt.client.operation.OperationUtils;
 import mdt.model.AASUtils;
 import mdt.model.MDTModelSerDe;
 import mdt.model.sm.value.ElementValues;
 import mdt.task.builtin.ProgramOperationDescriptor;
+
+import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
+import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
 
 
 /**
@@ -100,20 +101,20 @@ class ProgramOperationProvider implements OperationProvider {
 					.innerJoin(FStream.from(m_cmdExec.getVariableMap()), opv -> opv.getValue().getIdShort(), KeyValue::key)
 					.forEachOrThrow(match -> {
 						OperationVariable opv = match._1;
-						Variable var = match._2.value();
+						CommandVariable var = match._2.value();
 						
 						SubmodelElement old = opv.getValue();
-						ElementValues.updateWithExternalString(old, var.getValue());
+						ElementValues.updateWithRawString(old, var.getValue());
 					});
 
 			FStream.of(outputVars)
 					.innerJoin(FStream.from(m_cmdExec.getVariableMap()), opv -> opv.getValue().getIdShort(), KeyValue::key)
 					.forEachOrThrow(match -> {
 						OperationVariable opv = match._1;
-						Variable var = match._2.value();
+						CommandVariable var = match._2.value();
 						
 						SubmodelElement old = opv.getValue();
-						ElementValues.updateWithExternalString(old, var.getValue());
+						ElementValues.updateWithRawString(old, var.getValue());
 					});
 		}
 		finally {

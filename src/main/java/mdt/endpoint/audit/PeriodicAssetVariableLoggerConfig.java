@@ -31,6 +31,7 @@ public class PeriodicAssetVariableLoggerConfig extends EndpointConfig<PeriodicAs
 	private String jdbcConfigKey;
 	private List<ElementColumnConfig> columns;
 	private Duration interval;
+	private boolean distinct = true;
 	private boolean enabled = true;
 	
 	@JsonProperty("interval")
@@ -48,6 +49,6 @@ public class PeriodicAssetVariableLoggerConfig extends EndpointConfig<PeriodicAs
 		String colsStr = FStream.from(this.columns)
 								.map(ElementColumnConfig::getName)
 								.join(", ");
-		return String.format("%s{%s}, interval=%s", this.table, colsStr, this.interval);
+		return String.format("%s{%s}, interval=%s, distinct=%s", this.table, colsStr, this.interval, this.distinct);
 	}
 }
