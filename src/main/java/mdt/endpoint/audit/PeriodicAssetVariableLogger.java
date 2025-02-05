@@ -16,15 +16,16 @@ import utils.jdbc.JdbcProcessor;
 import utils.jdbc.JdbcUtils;
 import utils.stream.FStream;
 
+import mdt.ElementColumnConfig;
+import mdt.ElementHandle;
+import mdt.FaaastRuntime;
+import mdt.MDTGlobalConfigurations;
+
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.config.CoreConfig;
 import de.fraunhofer.iosb.ilt.faaast.service.endpoint.Endpoint;
 import de.fraunhofer.iosb.ilt.faaast.service.exception.ConfigurationInitializationException;
 import de.fraunhofer.iosb.ilt.faaast.service.exception.EndpointException;
-import mdt.ElementColumnConfig;
-import mdt.ElementHandle;
-import mdt.FaaastRuntime;
-import mdt.MDTGlobalConfigurations;
 
 /**
  *
@@ -45,16 +46,18 @@ public class PeriodicAssetVariableLogger implements Endpoint<PeriodicAssetVariab
 	@Override
 	public void init(CoreConfig coreConfig, PeriodicAssetVariableLoggerConfig config, ServiceContext serviceContext)
 		throws ConfigurationInitializationException {
-		m_faaast = new FaaastRuntime(serviceContext);
-		
 		m_config = config;
+		if ( !m_config.isEnabled() ) {
+			return;
+		}
+		
+		m_faaast = new FaaastRuntime(serviceContext);
 		m_columns = config.getColumns();
 		
 		String colCsv = FStream.from(m_columns).map(ElementColumnConfig::getName).join(',');
 		String paramCsv = FStream.range(0, m_columns.size()).map(idx -> "?").join(',');
 		m_lastValues = FStream.from(m_columns).map(c -> new Object()).toList();
-		m_insertSql = String.format("insert into %s(ts,%s) values (?, %s)",
-									config.getTable(), colCsv, paramCsv);
+		m_insertSql = String.format("insert into %s(ts,%s) values (?, %s)", config.getTable(), colCsv, paramCsv);
 		
 		try {
 			JdbcConfiguration jdbcConfig = MDTGlobalConfigurations.loadJdbcConfiguration(m_config.getJdbcConfigKey());

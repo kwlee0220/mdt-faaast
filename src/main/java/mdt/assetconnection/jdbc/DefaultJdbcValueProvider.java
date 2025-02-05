@@ -23,7 +23,7 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.MDTSubstitutor;
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
-import mdt.persistence.JdbcAssetParameter;
+import mdt.persistence.asset.jdbc.JdbcAssetVariable;
 
 /**
  *
@@ -31,7 +31,7 @@ import mdt.persistence.JdbcAssetParameter;
  */
 public class DefaultJdbcValueProvider implements AssetValueProvider {
 	private final DefaultJdbcValueProviderConfig m_config;
-	private final JdbcAssetParameter m_variable;
+	private final JdbcAssetVariable m_variable;
 	private Instant m_lastAccessTime;
 
 	public DefaultJdbcValueProvider(ServiceContext serviceContext, Reference reference,
@@ -66,7 +66,7 @@ public class DefaultJdbcValueProvider implements AssetValueProvider {
 			if ( m_config.getValidPeriod() != null ) {
 				Instant now = Instant.now();
 				if ( Duration.between(m_lastAccessTime, now).compareTo(m_config.getValidPeriod()) > 0 ) {
-					m_variable.load(null, null);
+//					m_variable.load(null, null);
 					m_lastAccessTime = now;
 				}
 			}
@@ -83,7 +83,7 @@ public class DefaultJdbcValueProvider implements AssetValueProvider {
 	public void setValue(DataElementValue value) throws AssetConnectionException {
 		try {
 			ElementValueMapper.setValue(null, value);
-			m_variable.save(null, null);
+//			m_variable.save(null, null);
 			
 			m_lastAccessTime = Instant.now();
 		}

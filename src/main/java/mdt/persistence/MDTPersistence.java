@@ -1,6 +1,9 @@
 package mdt.persistence;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +16,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -22,13 +26,14 @@ import utils.stream.FStream;
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.config.CoreConfig;
 import de.fraunhofer.iosb.ilt.faaast.service.exception.ConfigurationInitializationException;
+import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
 import de.fraunhofer.iosb.ilt.faaast.service.model.SubmodelElementIdentifier;
+import de.fraunhofer.iosb.ilt.faaast.service.model.api.modifier.Level;
 import de.fraunhofer.iosb.ilt.faaast.service.model.api.modifier.QueryModifier;
 import de.fraunhofer.iosb.ilt.faaast.service.model.api.operation.OperationHandle;
 import de.fraunhofer.iosb.ilt.faaast.service.model.api.operation.OperationResult;
 import de.fraunhofer.iosb.ilt.faaast.service.model.api.paging.Page;
 import de.fraunhofer.iosb.ilt.faaast.service.model.api.paging.PagingInfo;
-import de.fraunhofer.iosb.ilt.faaast.service.model.api.paging.PagingMetadata;
 import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ResourceNotAContainerElementException;
 import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ResourceNotFoundException;
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.AssetAdministrationShellSearchCriteria;
@@ -38,7 +43,13 @@ import de.fraunhofer.iosb.ilt.faaast.service.persistence.SubmodelElementSearchCr
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.SubmodelSearchCriteria;
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.memory.PersistenceInMemory;
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.memory.PersistenceInMemoryConfig;
-import mdt.model.sm.SubmodelUtils;
+import mdt.model.MDTModelSerDe;
+import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.value.SubmodelElementValue;
+import mdt.persistence.asset.AssetUpdateEvent;
+import mdt.persistence.asset.AssetVariable;
+import mdt.persistence.asset.AssetVariableConfig;
+import mdt.persistence.asset.AssetVariableException;
 
 
 /**
@@ -52,8 +63,7 @@ public class MDTPersistence implements Persistence<MDTPersistenceConfig> {
 	private MDTPersistenceConfig m_persistConfig;
 	private final PersistenceInMemory m_basePersistence;
 	private PersistenceInMemoryConfig m_basePersistenceConfig;
-	private Map<String,Submodel> m_submodels = Maps.newHashMap();
-	private Multimap<String, AssetParameter> m_assetParameters = ArrayListMultimap.create();
+	private Multimap<String, AssetVariable> m_variablesBySubmodel = ArrayListMultimap.create();
 
 	public MDTPersistence() {
 		m_basePersistence = new PersistenceInMemory();
@@ -68,13 +78,22 @@ public class MDTPersistence implements Persistence<MDTPersistenceConfig> {
 																.initialModelFile(config.getInitialModelFile())
 																.build();
 		m_basePersistence.init(coreConfig, m_basePersistenceConfig, serviceContext);
-		
+
+		// SubmodelIdShort -> SubmodelId 매핑을 먼저 생성하고,
+		// 이를 통해 SubmodelId에 해당하는 AssetVariable들을 찾을 수 있는 매핑을 생성한다.
 		Environment env = m_basePersistence.getEnvironment();
-		FStream.from(env.getSubmodels()).forEach(sm -> m_submodels.put(sm.getId(), sm));
-		for ( AssetParameterConfig paramConfig: config.getAssetParameters() ) {
-			AssetParameter param = createAssetParameter(paramConfig, env);
-			m_assetParameters.put(param.getSubmodelIdShort(), param);
-		}
+		Map<String,String> smIdMapping = FStream.from(env.getSubmodels())
+												.collect(Maps.newHashMap(), (m, sm) -> m.put(sm.getIdShort(), sm.getId()));
+		FStream.from(config.getAssetVariableConfigs())
+		 		.map(c -> createAssetVariable(c))
+		 		.forEach(assetVar -> {
+		 			String smId = smIdMapping.get(assetVar.getSubmodelIdShort());
+					if ( smId == null ) {
+						String msg = String.format("Unknown SubmodelIdShort: assetVariable=%s", assetVar);
+						throw new AssetVariableException(msg);
+					}
+		 			m_variablesBySubmodel.put(smId, assetVar);
+		 		});
 	}
 
 	@Override
@@ -131,143 +150,127 @@ public class MDTPersistence implements Persistence<MDTPersistenceConfig> {
 		m_basePersistence.deleteAssetAdministrationShell(id);
 	}
 	
-	
+	private boolean isNormalModifier(QueryModifier modifier) {
+        return modifier.getLevel() == Level.DEFAULT;
+	}
 
 	@Override
 	public Submodel getSubmodel(String id, QueryModifier modifier) throws ResourceNotFoundException {
-		Submodel sm = m_basePersistence.getSubmodel(id, QueryModifier.DEFAULT);
-		FStream.from(m_assetParameters.get(sm.getIdShort()))
-				.forEach(param -> {
-					SubmodelElement element = SubmodelUtils.traverse(sm, param.getElementPath());
-					param.load(element, param.getElementPath());
-				});
-		return sm;
+		var variables = m_variablesBySubmodel.get(id);
+		if ( variables.size() > 0 ) {
+			// 대상 submodel과 연관된 AssetVariable들을 통해 외부 asset에서 값을 읽어와서
+			// Submodel에 반영시킨다.
+			Submodel sm = m_basePersistence.getSubmodel(id, QueryModifier.DEFAULT);
+			updateSubmodel(sm, variables);
+		
+			// Submodel이 갱신되면 사용자가 요청한 modifier에 따라 Submodel을 반환한다.
+			// 만일 사용자가 요청한 modifier가 DEFAULT인 경우에는 갱신된 Submodel을 바로 반환한다.
+			return (!isNormalModifier(modifier)) ? m_basePersistence.getSubmodel(id, modifier) : sm;
+		}
+		else {
+			return m_basePersistence.getSubmodel(id, modifier);
+		}
 	}
 
 	@Override
 	public Page<Submodel> findSubmodels(SubmodelSearchCriteria criteria, QueryModifier modifier, PagingInfo paging) {
-		List<String> smIdList = findSubmodelAll(criteria);
+		Page<Submodel> page = m_basePersistence.findSubmodels(criteria, QueryModifier.DEFAULT, paging);
+		List<Submodel> submodels = FStream.from(page.getContent())
+											.mapOrIgnore(sm -> {
+												var variables = m_variablesBySubmodel.get(sm.getId());
+												updateSubmodel(sm, variables);
+												return sm;
+											})
+									        .toList();
 		
-		List<Submodel> submodelList = FStream.from(smIdList)
-											.mapOrIgnore(id -> getSubmodel(id, modifier))
-											.toList();
-		Page<Submodel> page = new Page<>();
-		page.setContent(submodelList);
-		page.setMetadata(PagingMetadata.builder().cursor(submodelList.get(0).getId()).build());
-		
-		return page;
+		if ( !isNormalModifier(modifier) ) {
+			page.setContent(submodels);
+			return page;
+		}
+		else {
+			return m_basePersistence.findSubmodels(criteria, modifier, paging);
+		}
 	}
 
 	@Override
 	public void save(Submodel submodel) {
-		System.err.println("MDTPersistence.save(Submodel)");
+		m_basePersistence.save(submodel);
 		
-		String smIdShort = submodel.getIdShort();
-		FStream.from(m_assetParameters.get(smIdShort))
-				.forEach(param -> {
-					SubmodelElement element = SubmodelUtils.traverse(submodel, param.getElementPath());
-					param.save(param.getElementPath(), element);
-				});
+		// 갱신된 Submodel에 관련된 AssetVariable들을 찾아서
+		// update된 SubmodelElement 값들을 asset에 반영시킨다.
+		updateAssetVariables(submodel, m_variablesBySubmodel.get(submodel.getId()));
 	}
 
 	@Override
 	public void deleteSubmodel(String id) throws ResourceNotFoundException {
-		System.err.printf("MDTPersistence.deleteSubmodel(%s)%n", id);
-		
-		throw new UnsupportedOperationException();
+		m_basePersistence.deleteSubmodel(id);
 	}
 	
-	
-	private void loadSubmodelElement(SubmodelElement buffer, String submodelId, String path)
-		throws ResourceNotFoundException {
-		Submodel sm = m_submodels.get(submodelId);
-		if ( sm == null ) {
-			throw new ResourceNotFoundException(submodelId, Submodel.class);
-		}
-		
-		for ( AssetParameter param: m_assetParameters.get(sm.getIdShort()) ) {
-			if ( param.contains(path) ) {
-				param.load(buffer, path);
-				return;
-			}
-			else if ( param.isContained(path) ) {
-				param.load(buffer, path);
-			}
-		}
-	}
-	
-	
-
 	@Override
 	public SubmodelElement getSubmodelElement(SubmodelElementIdentifier identifier, QueryModifier modifier)
-		throws ResourceNotFoundException {
-		String submodelId = identifier.getSubmodelId();
-		String targetPath = identifier.getIdShortPath().toString();
-		
-		SubmodelElement buffer = m_basePersistence.getSubmodelElement(identifier, modifier);
-		loadSubmodelElement(buffer, submodelId, targetPath);
-		return buffer;
+		throws ResourceNotFoundException {	
+		List<AssetVariable> relevantVariables = findMatchingAssetVariables(identifier, false);
+		if ( relevantVariables.size() > 0 ) {
+			String submodelId = identifier.getSubmodelId();
+			
+			// 검색 대상 SubmodelElement와 연결된 AssetVariable들이 존재하는 경우,
+			// AssetVariable들을 통해 외부 asset에서 값을 읽어와서 SubmodelElement에 반영시킨다.
+			Submodel sm = m_basePersistence.getSubmodel(submodelId, QueryModifier.DEFAULT);
+			updateSubmodel(sm, relevantVariables);
+        }
+		return m_basePersistence.getSubmodelElement(identifier, modifier);
 	}
-
+	
 	@Override
-	public Page<SubmodelElement> findSubmodelElements(SubmodelElementSearchCriteria criteria, QueryModifier modifier,
+	public Page<SubmodelElement> findSubmodelElements(SubmodelElementSearchCriteria criteria,
+														QueryModifier modifier,
 														PagingInfo paging) throws ResourceNotFoundException {
-		System.err.println("MDTPersistence.findSubmodelElements");
-		throw new UnsupportedOperationException();
+		// m_basePersistence의 findSubmodelElements()를 호출해서 반환된 SubmodelElement들이
+		// 어떤 Submodel에 속하는지를 알 수 없기 때문에, criteria와 관련된 모든 Submodel에 속한
+		// AssetVariable들을 통해 Submodel을 먼저 update 시킨다.
+		m_basePersistence.getAllSubmodels(QueryModifier.DEFAULT, PagingInfo.ALL)
+			            .getContent().stream()
+			            .forEach(sm -> {
+			        		var variables = m_variablesBySubmodel.get(sm.getId());
+			        		updateSubmodel(sm, variables);
+                        });
+		return m_basePersistence.findSubmodelElements(criteria, modifier, paging);
 	}
 
 	@Override
 	public void insert(SubmodelElementIdentifier parentIdentifier, SubmodelElement submodelElement)
 		throws ResourceNotFoundException, ResourceNotAContainerElementException {
-		System.err.println("MDTPersistence.insert");
-		throw new UnsupportedOperationException();
+		// 새로운 SubmodelElement를 m_basePersistence을 통해 삽입시킨다.
+		m_basePersistence.insert(parentIdentifier, submodelElement);
+
+		var matches = findMatchingAssetVariables(parentIdentifier, true);
+		if ( matches.size() > 0 ) {
+			String submodelId = parentIdentifier.getSubmodelId();
+			
+			Submodel sm = m_basePersistence.getSubmodel(submodelId, QueryModifier.DEFAULT);
+			updateAssetVariables(sm, matches);
+		}
 	}
 
 	@Override
 	public void update(SubmodelElementIdentifier identifier, SubmodelElement submodelElement)
 		throws ResourceNotFoundException {
-		String submodelId = identifier.getSubmodelId();
-		Submodel sm = m_submodels.get(submodelId);
-		if ( sm == null ) {
-			throw new ResourceNotFoundException(submodelId, Submodel.class);
-		}
-		String smIdShort = sm.getIdShort();
-		
+		// 변경된 SubmodelElement를 m_basePersistence을 통해 반영한다.
 		m_basePersistence.update(identifier, submodelElement);
-		
-		String targetPath = identifier.getIdShortPath().toString();
-		for ( AssetParameter param: m_assetParameters.get(smIdShort) ) {
-			param.save(targetPath, submodelElement);
+
+		var matches = findMatchingAssetVariables(identifier, true);
+		if ( matches.size() > 0 ) {
+			String submodelId = identifier.getSubmodelId();
+			
+			Submodel sm = m_basePersistence.getSubmodel(submodelId, QueryModifier.DEFAULT);
+			updateAssetVariables(sm, matches);
 		}
-		
-//		// 요청된 idShortPath를 포함하는 ParameterSet을 찾는다.
-//		// 검색된 경우에는 검색된 mount 전체에 해당하는 top SubmodelElement를 생성하고
-//		// 이 SubmodelElement부터 탐색을 수행한다.
-//		AssetParameter cover = findCoveringParameterSet(submodelId, targetPath);
-//		if ( cover != null ) {
-////			String relPath = SubmodelUtils.toRelativeIdShortPath(cover.getElementPath(), targetPath);
-////			SubmodelElement target = SubmodelUtils.traverse(cover.getElementBuffer(), relPath);
-////			ElementValues.update(target, newValue);
-//			
-//			cover.save(targetPath);
-//		}
-//		
-//		// 요청된 idShortPath가 넓어서 하나 이상의 mount를 포함하는 경우에는
-//		// 그 위치에 해당하는 최상위 SubmodelElementCollection 객체를 기존 base-persistence를 통해
-//		// 획득한 이후, idShortPath에 의해 포함된 모든 mount를 읽어서 생성된 SubmodelElement들을
-//		// 이 최상위 SubmodelElementCollection이 추가시킨다.
-//		for ( AssetParameter param: findPertainingParameterSetAll(submodelId, targetPath) ) {
-//			param.save(targetPath);
-//		}
 	}
 
 	@Override
 	public void deleteSubmodelElement(SubmodelElementIdentifier identifier) throws ResourceNotFoundException {
-		System.err.println("MDTPersistence.deleteSubmodelElement");
-		throw new UnsupportedOperationException();
-	}
-	
-	
+		m_basePersistence.deleteSubmodelElement(identifier);
+	}	
 
 	@Override
 	public OperationResult getOperationResult(OperationHandle handle) throws ResourceNotFoundException {
@@ -279,60 +282,107 @@ public class MDTPersistence implements Persistence<MDTPersistenceConfig> {
 		m_basePersistence.save(handle, result);
 	}
 	
+	public void handleAssetUpdateEvent(AssetUpdateEvent event) {
+		SubmodelElementIdentifier id = SubmodelElementIdentifier.builder()
+                                                                .submodelId(event.getSubmodel())
+                                                                .idShortPath(IdShortPath.builder().path(event.getPath()).build())
+                                                                .build();
+		try {
+			SubmodelElement element = m_basePersistence.getSubmodelElement(id, QueryModifier.DEFAULT);
+			updateWithValueJsonString(element, event.getUpdate());
+			m_basePersistence.update(id, element);
+		}
+		catch ( ResourceNotFoundException | IOException e ) {
+			s_logger.warn("Failed to handle AssetUpdateEvent: {}, cause={}", event, e);
+		}
+	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private AssetParameter createAssetParameter(AssetParameterConfig config, Environment env) {
+	private AssetVariable createAssetVariable(AssetVariableConfig config) {
 		try {
 			String configClassName = config.getClass().getName();
 			int length = configClassName.length();
-			String paramClassName = configClassName.substring(0, length-6);
+			String assetVarClassName = configClassName.substring(0, length-6);
 			
-			Class paramClass = Class.forName(paramClassName);
-			Constructor ctor = paramClass.getDeclaredConstructor(config.getClass());
-			AssetParameter param = (AssetParameter)ctor.newInstance(config);
-			
-			param.initialize(env);
-			
-			return param;
+			Class assetVarClass = Class.forName(assetVarClassName);
+			Constructor ctor = assetVarClass.getDeclaredConstructor(config.getClass());
+			return (AssetVariable)ctor.newInstance(config);
 		}
 		catch ( Exception e ) {
-			throw new AssetParameterException("Failed to create AssetParameter", e);
+			throw new AssetVariableException("Failed to create an AssetVariable", e);
 		}
 	}
 	
-	private List<String> findSubmodelAll(SubmodelSearchCriteria criteria) {
-		if ( criteria.isIdShortSet() ) {
-			return FStream.from(m_submodels.values())
-							.filter(sm -> criteria.getIdShort().equals(sm.getIdShort()))
-							.map(sm -> sm.getId())
-							.toList();
-		}
-		else if ( criteria.isSemanticIdSet() ) {
-			Reference id = criteria.getSemanticId();
-			return FStream.from(m_submodels.values())
-							.filter(sm -> id.equals(sm.getSemanticId()))
-							.map(Submodel::getId)
+	private List<AssetVariable> findMatchingAssetVariables(SubmodelElementIdentifier identifier, boolean forUpdate) {
+		String submodelId = identifier.getSubmodelId();
+		String elementPath = identifier.getIdShortPath().toString();
+		
+		var variables = m_variablesBySubmodel.get(submodelId);
+		if ( variables.size() > 0 ) {
+			return FStream.from(variables)
+						    .filter(var -> forUpdate ? var.isUpdateable() : true)
+							.filter(var -> var.overlaps(elementPath))
 							.toList();
 		}
 		else {
-			return FStream.from(m_submodels.values())
-							.map(sm -> sm.getId())
-							.toList();
+			return Collections.emptyList();
 		}
 	}
 	
-//	private AssetParameter findCoveringParameterSet(String smId, String path) {
-//		return FStream.from(m_assetParameters)
-//						.filter(param -> path.startsWith(param.getElementPath())
-//										&& param.getSubmodelId().equals(smId))
-//						.findFirst()
-//						.getOrNull();
-//	}
-//	
-//	private List<AssetParameter> findPertainingParameterSetAll(String smId, String path) {
-//		return FStream.from(m_assetParameters)
-//						.filter(param -> param.getElementPath().startsWith(path)
-//										&& param.getSubmodelId().equals(smId))
-//						.toList();
-//	}
+	/**
+	 * 주어진 Submodel에 해당하는 AssetVariable들을 통해 외부 asset에서 값을 읽어와서
+	 * Submodel에 반영시킨다.
+	 * 
+	 * @param sm			Submodel
+	 * @param variables		외부 asset의 데이터를 읽어 올 AssetVariable들
+	 */
+	private void updateSubmodel(Submodel sm, Collection<AssetVariable> variables) {
+		FStream.from(variables)
+				.forEachOrThrow(var -> {
+					// AssetVariable과 연결된 SubmodelElement를 Submodel에서 찾아 바인딩시킨다.
+					var.bind(sm);
+					// SubmodelElement를 외부 asset에서 읽어와서 바인딩된 SubmodelElement에 반영시킨다.
+					SubmodelElement updated = var.load();
+					
+					// 변경된 SubmodelElement를 m_basePersistence에도 반영시킨다.
+					IdShortPath idShortPath = IdShortPath.builder().path(var.getElementPath()).build();
+					SubmodelElementIdentifier id = SubmodelElementIdentifier.builder()
+																			.submodelId(sm.getId())
+																			.idShortPath(idShortPath)
+																			.build();
+					try {
+						m_basePersistence.update(id, updated);
+					}
+					catch ( ResourceNotFoundException neverHappens ) {}
+				});
+	}
+	
+	/**
+	 * 주어진 Submodel에서 AssetVariable들을 통해 해당 Element 영역을 외부 asset에 반영시킨다.
+	 * <p>
+	 * 입력으로 주어진 AssetVariable들은 updateable한 것들 이어야 한다.
+	 * 
+	 * @param sm			Submodel
+	 * @param variables		반영 대상 AssetVariable들의 목록
+	 * @return	반영 여부가 있었는지 여부
+	 */
+	private void updateAssetVariables(Submodel sm, Collection<AssetVariable> variables) {
+		FStream.from(variables)
+				.forEachOrThrow(var -> {
+					var.bind(sm);
+					var.save();
+				});
+	}
+
+	static void update(SubmodelElement buffer, SubmodelElementValue smev) {
+		ElementValues.update(buffer, smev);
+	}
+
+	static void updateWithValueJsonNode(SubmodelElement buffer, JsonNode valueNode) throws IOException {
+		ElementValues.update(buffer, valueNode);
+	}
+
+	static void updateWithValueJsonString(SubmodelElement buffer, String valueJsonString) throws IOException {
+		updateWithValueJsonNode(buffer, MDTModelSerDe.readJsonNode(valueJsonString));
+	}
 }

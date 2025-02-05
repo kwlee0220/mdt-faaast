@@ -1,6 +1,5 @@
 package mdt.endpoint;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -9,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.util.concurrent.AbstractScheduledService;
 
-import utils.Throwables;
 import utils.http.HttpRESTfulClient;
 import utils.http.JacksonErrorEntityDeserializer;
 
@@ -20,6 +18,9 @@ import de.fraunhofer.iosb.ilt.faaast.service.exception.ConfigurationInitializati
 import de.fraunhofer.iosb.ilt.faaast.service.exception.EndpointException;
 
 /**
+ * MDTManager의 health를 주기적으로 모니터링하는 서비스.
+ * <p>
+ * 만일 MDTManager와의 연결이 끊기면, MDTInstance를 종료한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -30,10 +31,6 @@ public class MDTManagerHealthMonitor extends AbstractScheduledService
 	private MDTManagerHealthMonitorConfig m_config;
 	private String m_url;
 	private HttpRESTfulClient m_restfulClient;
-	private Duration m_pollInterval;
-	private int m_retryCount;
-	
-	private int m_retryRemains;
 
 	@Override
 	public void init(CoreConfig coreConfig, MDTManagerHealthMonitorConfig config, ServiceContext serviceContext)
@@ -45,9 +42,6 @@ public class MDTManagerHealthMonitor extends AbstractScheduledService
 		m_restfulClient = HttpRESTfulClient.builder()
 											.errorEntityDeserializer(new JacksonErrorEntityDeserializer(mapper))
 											.build();
-		m_pollInterval = config.getPollInterval();
-		m_retryCount = config.getRetryCount();
-		m_retryRemains = m_retryCount;
 	}
 
 	@Override
@@ -76,30 +70,23 @@ public class MDTManagerHealthMonitor extends AbstractScheduledService
 				s_logger.debug("check MDTManager health: url={}", m_url);
 			}
 			m_restfulClient.get(m_url);
-			m_retryRemains = m_retryCount;
 		}
 		catch ( Exception e ) {
-			--m_retryRemains;
 			if ( s_logger.isInfoEnabled() ) {
-				s_logger.info("Failed to connect MDTManager: url={}, retry-remains={}, cause={}",
-								m_url, m_retryRemains, Throwables.unwrapThrowable(e));
+				s_logger.info("Failed to connect MDTManager: {} -> shutting-down MDTInstance", this);
 			}
-			if ( m_retryRemains <= 0 ) {
-				if ( s_logger.isWarnEnabled() ) {
-					s_logger.warn("Shutting-down MDTInstance because MDTManager is down.");
-				}
-				System.exit(0);
-			}
+			System.exit(0);
 		}
 	}
 
 	@Override
 	protected Scheduler scheduler() {
-		return Scheduler.newFixedRateSchedule(0, m_pollInterval.toMillis(), TimeUnit.MILLISECONDS);
+		long intervalMillis = m_config.getCheckInterval().toMillis();
+		return Scheduler.newFixedRateSchedule(0, intervalMillis, TimeUnit.MILLISECONDS);
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("mdt-url=%s, poll-interval=%s, retry-count=%d", m_url, m_pollInterval, m_retryRemains);
+		return String.format("mdt-url=%s, checkInterval=%s", m_url, m_config.getCheckInterval());
 	}
 }
