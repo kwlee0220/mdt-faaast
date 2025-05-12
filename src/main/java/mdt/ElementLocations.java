@@ -19,6 +19,9 @@ public class ElementLocations {
 			case "oparg":
 				return new MDTOperationArgumentLocation(parts[1], MDTArgumentKind.valueOf(parts[2]), parts[3]);
 			default:
+				if ( parts.length != 2 ) {
+					throw new IllegalArgumentException("Invalid ElementLocation expr=" + expr);
+				}
 				return new DefaultElementLocation(parts[0], parts[1]);
 		}
 	}

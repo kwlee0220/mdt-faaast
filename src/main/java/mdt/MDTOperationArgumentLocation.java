@@ -36,7 +36,7 @@ public class MDTOperationArgumentLocation implements ElementLocation {
 
 	@Override
 	public void activate(MDTModelLookup lookup) {
-		Submodel opSubmodel = FStream.from(lookup.getAllSubmodels())
+		Submodel opSubmodel = FStream.from(lookup.getSubmodelAll())
 									.findFirst(sm -> m_submodelIdShort.equals(sm.getIdShort()))
 									.getOrThrow(() -> new IllegalArgumentException("Submodel not found: "
 																					+ m_submodelIdShort));

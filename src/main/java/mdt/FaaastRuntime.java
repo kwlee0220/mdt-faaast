@@ -1,17 +1,21 @@
 package mdt;
 
+import java.util.List;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import utils.func.Funcs;
+import utils.func.Lazy;
+
+import mdt.model.ReferenceUtils;
+import mdt.model.ResourceNotFoundException;
 
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
 import de.fraunhofer.iosb.ilt.faaast.service.model.api.request.submodel.GetSubmodelElementByPathRequest;
 import de.fraunhofer.iosb.ilt.faaast.service.util.ReferenceHelper;
-import mdt.model.ReferenceUtils;
-import mdt.model.ResourceNotFoundException;
 
 /**
  *
@@ -19,9 +23,14 @@ import mdt.model.ResourceNotFoundException;
  */
 public class FaaastRuntime {
 	private final ServiceContext m_service;
+	private final Lazy<List<Submodel>> m_submodels = Lazy.of(() -> loadSubmodels());
 	
 	public FaaastRuntime(ServiceContext service) {
 		m_service = service;
+	}
+	
+	public List<Submodel> getSubmodels() {
+		return m_submodels.get();
 	}
 	
 	public Submodel getSubmodelById(String submodelId) {
@@ -50,5 +59,9 @@ public class FaaastRuntime {
 		String path = IdShortPath.fromReference(reference).toString();
 		
 		return getSubmodelElementByPath(submodelId, path);
+	}
+	
+	private List<Submodel> loadSubmodels() {
+		return m_service.getAASEnvironment().getSubmodels();
 	}
 }

@@ -55,7 +55,15 @@ public class MDTModelLookup {
 		return s_instance;
 	}
 	
-	public List<Submodel> getAllSubmodels() {
+	public static MDTModelLookup getInstance() {
+		if ( s_instance == null ) {
+			throw new IllegalStateException("MDTModelLookup is not initialized");
+		}
+
+		return s_instance;
+	}
+	
+	public List<Submodel> getSubmodelAll() {
 		return m_submodels;
 	}
 	

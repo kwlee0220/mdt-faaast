@@ -18,6 +18,7 @@ import mdt.model.sm.SubmodelUtils;
 import mdt.model.timeseries.DefaultMetadata;
 import mdt.model.timeseries.DefaultSegment;
 import mdt.model.timeseries.DefaultSegments;
+import mdt.persistence.MDTModelLookup;
 import mdt.persistence.PersistenceStack;
 import mdt.persistence.timeseries.TimeSeriesSubmodelConfig.TailConfig;
 
@@ -60,7 +61,8 @@ public class TimeSeriesPersistence extends PersistenceStack<TimeSeriesPersistenc
 		}
 		
 		// 시계열 Submodel과 관련된 설정 정보를 찾는다.
-		m_tsSubmodelConfigs = loadTimeSeriesSubmodelConfigs(getRawSubmodels());
+		MDTModelLookup modelLookup = MDTModelLookup.getInstance();
+		m_tsSubmodelConfigs = loadTimeSeriesSubmodelConfigs(modelLookup.getSubmodelAll());
 	}
 
 	@Override

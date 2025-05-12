@@ -1,7 +1,5 @@
 package mdt.persistence;
 
-import java.util.List;
-
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.ConceptDescription;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
@@ -39,12 +37,11 @@ import de.fraunhofer.iosb.ilt.faaast.service.persistence.SubmodelSearchCriteria;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class PersistenceStack<C extends PersistenceStackConfig>
-																		implements Persistence<C>, LoggerSettable {
+public abstract class PersistenceStack<C extends PersistenceStackConfig<?>>
+																implements Persistence<C>, LoggerSettable {
 	private static final Logger s_logger = LoggerFactory.getLogger(PersistenceStack.class);
 	
 	private Persistence m_basePersistence;
-	private List<Submodel> m_rawSubmodels;
 	private Logger m_logger = s_logger;
 
 	public PersistenceStack() {
@@ -62,8 +59,7 @@ public abstract class PersistenceStack<C extends PersistenceStackConfig>
 		m_basePersistence.init(coreConfig, baseConfig, serviceContext);
 		
 		if ( !(m_basePersistence instanceof PersistenceStack) ) {
-			Page<Submodel> paged = m_basePersistence.getAllSubmodels(QueryModifier.DEFAULT, PagingInfo.ALL);
-			m_rawSubmodels = paged.getContent();
+			MDTModelLookup.getInstanceOrCreate(m_basePersistence);
 		}
 	}
 	
@@ -73,15 +69,6 @@ public abstract class PersistenceStack<C extends PersistenceStackConfig>
 	
 	public void setBasePersistence(Persistence<?> base) {
 		m_basePersistence = base;
-	}
-	
-	public List<Submodel> getRawSubmodels() {
-		if ( m_basePersistence instanceof PersistenceStack pstack ) {
-			return pstack.getRawSubmodels();
-		}
-		else {
-			return m_rawSubmodels;
-		}
 	}
 
 	@Override

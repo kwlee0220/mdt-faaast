@@ -36,7 +36,6 @@ public class ConcurrentPersistence extends PersistenceStack<ConcurrentPersistenc
 													implements Persistence<ConcurrentPersistenceConfig> {
 	private static final Logger s_logger = LoggerFactory.getLogger(ConcurrentPersistence.class);
 	
-	private MDTModelLookup m_lookup;
 	private ConcurrentPersistenceConfig m_config;
 	private final Guard m_guard = Guard.create();
 	
@@ -49,9 +48,7 @@ public class ConcurrentPersistence extends PersistenceStack<ConcurrentPersistenc
 		throws ConfigurationInitializationException {
 		super.init(coreConfig, config, serviceContext);
 		
-		m_lookup = MDTModelLookup.getInstanceOrCreate(getBasePersistence());
 		m_config = config;
-		
 		if ( getLogger().isInfoEnabled() ) {
 			getLogger().info("initialized {}, config={}", this, config);
 		}
@@ -71,7 +68,7 @@ public class ConcurrentPersistence extends PersistenceStack<ConcurrentPersistenc
 	@Override
 	public SubmodelElement getSubmodelElement(SubmodelElementIdentifier identifier, QueryModifier modifier)
 		throws ResourceNotFoundException {
-		String paramId = m_lookup.getParameterId(identifier);
+		String paramId = MDTModelLookup.getInstance().getParameterId(identifier);
 		if ( paramId != null ) {
 			m_guard.lock();
 			try {
@@ -89,7 +86,7 @@ public class ConcurrentPersistence extends PersistenceStack<ConcurrentPersistenc
 	@Override
 	public void update(SubmodelElementIdentifier identifier, SubmodelElement submodelElement)
 		throws ResourceNotFoundException {
-		String paramId = m_lookup.getParameterId(identifier);
+		String paramId = MDTModelLookup.getInstance().getParameterId(identifier);
 		if ( paramId != null ) {
 			m_guard.runChecked(() -> getBasePersistence().update(identifier, submodelElement));
 		}
@@ -112,7 +109,7 @@ public class ConcurrentPersistence extends PersistenceStack<ConcurrentPersistenc
 
 	@Override
 	public void deleteSubmodel(String id) throws ResourceNotFoundException {
-		if ( m_lookup.getDataSubmodel().getId().equals(id) ) {
+		if ( MDTModelLookup.getInstance().getDataSubmodel().getId().equals(id) ) {
 			m_guard.runChecked(() -> getBasePersistence().deleteSubmodel(id));
 		}
 		else {
@@ -122,7 +119,7 @@ public class ConcurrentPersistence extends PersistenceStack<ConcurrentPersistenc
 
 	@Override
 	public void deleteSubmodelElement(SubmodelElementIdentifier identifier) throws ResourceNotFoundException {
-		String paramId = m_lookup.getParameterId(identifier);
+		String paramId = MDTModelLookup.getInstance().getParameterId(identifier);
 		if ( paramId != null ) {
 			throw new UnsupportedOperationException("Deleting parameter is not supported");
 		}
@@ -138,7 +135,7 @@ public class ConcurrentPersistence extends PersistenceStack<ConcurrentPersistenc
 
 	@Override
 	public void save(Submodel submodel) {
-		if ( m_lookup.getDataSubmodel().getId().equals(submodel.getId()) ) {
+		if ( MDTModelLookup.getInstance().getDataSubmodel().getId().equals(submodel.getId()) ) {
 			m_guard.runChecked(() -> getBasePersistence().save(submodel));
 		}
 		else {
@@ -159,7 +156,7 @@ public class ConcurrentPersistence extends PersistenceStack<ConcurrentPersistenc
 
 	@Override
 	public Submodel getSubmodel(String id, QueryModifier modifier) throws ResourceNotFoundException {
-		if ( m_lookup.getDataSubmodel().getId().equals(id) ) {
+		if ( MDTModelLookup.getInstance().getDataSubmodel().getId().equals(id) ) {
 			return m_guard.getChecked(() -> getBasePersistence().getSubmodel(id, modifier));
 		}
 		else {

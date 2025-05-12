@@ -15,7 +15,7 @@ public class MDTParameterPersistenceConfig<P extends MDTParameterPersistence> ex
 		if ( this == obj ) {
 			return true;
 		}
-		if ( obj == null || !(obj instanceof ConcurrentPersistenceConfig) ) {
+		if ( obj == null || !(obj instanceof MDTParameterPersistenceConfig) ) {
 			return false;
 		}
 

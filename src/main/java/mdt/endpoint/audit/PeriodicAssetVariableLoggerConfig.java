@@ -7,14 +7,16 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import utils.UnitUtils;
-import utils.stream.FStream;
-
-import de.fraunhofer.iosb.ilt.faaast.service.endpoint.EndpointConfig;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import utils.UnitUtils;
+import utils.stream.FStream;
+
 import mdt.ElementColumnConfig;
+
+import de.fraunhofer.iosb.ilt.faaast.service.endpoint.EndpointConfig;
 
 
 /**
@@ -26,7 +28,7 @@ import mdt.ElementColumnConfig;
 @Getter @Setter
 public class PeriodicAssetVariableLoggerConfig extends EndpointConfig<PeriodicAssetVariableLogger> {
 	private String table;
-	private String jdbcConfigKey;
+	private String jdbcConfigKey = "default";
 	private List<ElementColumnConfig> columns;
 	private Duration interval;
 	private boolean distinct = true;

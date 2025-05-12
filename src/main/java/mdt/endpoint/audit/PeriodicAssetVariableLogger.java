@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,15 +15,17 @@ import utils.jdbc.JdbcProcessor;
 import utils.jdbc.JdbcUtils;
 import utils.stream.FStream;
 
+import mdt.ElementColumnConfig;
+import mdt.ElementHandle;
+import mdt.FaaastRuntime;
+import mdt.MDTGlobalConfigurations;
+import mdt.persistence.MDTModelLookup;
+
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.config.CoreConfig;
 import de.fraunhofer.iosb.ilt.faaast.service.endpoint.Endpoint;
 import de.fraunhofer.iosb.ilt.faaast.service.exception.ConfigurationInitializationException;
 import de.fraunhofer.iosb.ilt.faaast.service.exception.EndpointException;
-import mdt.ElementColumnConfig;
-import mdt.ElementHandle;
-import mdt.FaaastRuntime;
-import mdt.MDTGlobalConfigurations;
 
 /**
  *
@@ -87,14 +88,9 @@ public class PeriodicAssetVariableLogger implements Endpoint<PeriodicAssetVariab
 		};
 		m_periodicAudit.setLogger(s_logger);
 		
-		m_elementHandles = FStream.from(m_columns)
-									.map(cf -> {
-										ElementHandle handle = new ElementHandle(cf.getPath());
-										Submodel submodel = m_faaast.getSubmodelByIdShort(cf.getSubmodel());
-										handle.initialize(submodel);
-										return handle;
-									})
-									.toList();
+		final MDTModelLookup lookup = MDTModelLookup.getInstance();
+		FStream.from(m_config.getColumns())
+				.forEach(col -> col.getElementLocation().activate(lookup));
 		
 		if ( s_logger.isInfoEnabled() ) {
 			s_logger.info("Starting {}, config={}", getClass().getSimpleName(), m_config);
