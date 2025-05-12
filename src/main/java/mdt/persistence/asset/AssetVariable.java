@@ -3,6 +3,8 @@ package mdt.persistence.asset;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
+import mdt.ElementLocation;
+
 
 /**
  * 외부 설비 (Asset)가 생산하는 데이터를 다루기 위한 인터페이스를 정의한다.
@@ -19,18 +21,11 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
  */
 public interface AssetVariable {
 	/**
-	 * 연결된 SubmodelElement가 포함된 Submodel의 idShort을 반환한다.
+	 * 연결된 SubmodelElement의 위치를 반환한다.
 	 * 
-	 * @return Submodel idShort.
+	 * @return ElementLocation.
 	 */
-	public String getSubmodelIdShort();
-	
-	/**
-	 * 연결된 SubmodelElement의 idShort 경로를 반환한다.
-	 * 
-	 * @return SubmodelElement idShort 경로.
-	 */
-	public String getElementPath();
+	public ElementLocation getElementLocation();
 	
 	/**
 	 * 본 {@code AssetVariable}을 통해 SubmodelElement를 갱신할 수 있는지 여부를 반환한다.
@@ -67,11 +62,11 @@ public interface AssetVariable {
 	public void save() throws AssetVariableException;
 	
 	public default boolean contains(String elementPath) {
-		return elementPath.startsWith(getElementPath());
+		return elementPath.startsWith(getElementLocation().getElementPath());
 	}
 	
 	public default boolean isContained(String elementPath) {
-		return getElementPath().startsWith(elementPath);
+		return getElementLocation().getElementPath().startsWith(elementPath);
 	}
 	
 	public default boolean overlaps(String elementPath) {

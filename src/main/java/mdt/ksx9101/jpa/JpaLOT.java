@@ -8,7 +8,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
-
 import mdt.model.sm.data.LOT;
 import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;

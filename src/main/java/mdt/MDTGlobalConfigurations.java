@@ -3,10 +3,13 @@ package mdt;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+
+import lombok.experimental.UtilityClass;
 
 import utils.KeyValue;
 import utils.Utilities;
@@ -14,12 +17,12 @@ import utils.func.FOption;
 import utils.jdbc.JdbcConfiguration;
 import utils.stream.FStream;
 
-import lombok.experimental.UtilityClass;
 import mdt.ksx9101.GlobalPersistenceConfig;
 import mdt.ksx9101.JpaConfiguration;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.persistence.mqtt.MqttBrokerConfig;
 
 /**
  *
@@ -47,7 +50,8 @@ public class MDTGlobalConfigurations {
 					.flatMapIterable(node -> node.properties())
 					.mapOrThrow(ent -> KeyValue.of(ent.getKey(),
 													mapper.readValue(ent.getValue().traverse(), JdbcConfiguration.class)))
-					.toMap(KeyValue::key, KeyValue::value);
+					.toKeyValueStream(Function.identity())
+					.toMap();
 	}
 	
 	public static FOption<JpaConfiguration> loadJpaConfiguration() {
@@ -80,6 +84,17 @@ public class MDTGlobalConfigurations {
 										globalConfigFile.getAbsolutePath(), e);
 			throw new IllegalStateException(msg);
 		}
+	}
+	
+	public static Map<String,MqttBrokerConfig> loadMqttBrokerAll() throws IOException  {
+		JsonMapper mapper = MDTModelSerDe.getJsonMapper();
+		return findConfigNode("mqttBrokers")
+					.fstream()
+					.flatMapIterable(node -> node.properties())
+					.mapOrThrow(ent -> KeyValue.of(ent.getKey(),
+													mapper.readValue(ent.getValue().traverse(), MqttBrokerConfig.class)))
+					.toKeyValueStream(Function.identity())
+					.toMap();
 	}
 	
 	private static FOption<JsonNode> findConfigNode(String configKey) throws IOException {

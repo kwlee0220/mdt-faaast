@@ -6,9 +6,19 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
-import utils.func.FOption;
-import utils.func.Try;
+import lombok.Getter;
+import lombok.Setter;
+
 import utils.stream.FStream;
+
+import mdt.ksx9101.JpaEntityLoader;
+import mdt.model.TopLevelEntity;
+import mdt.model.sm.data.Equipment;
+import mdt.model.sm.data.Parameter;
+import mdt.model.sm.data.ParameterValue;
+import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SMListField;
+import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -17,20 +27,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
-
-import mdt.ksx9101.JpaEntityLoader;
-import mdt.model.TopLevelEntity;
-import mdt.model.sm.SubmodelUtils;
-import mdt.model.sm.data.Equipment;
-import mdt.model.sm.data.Parameter;
-import mdt.model.sm.data.ParameterValue;
-import mdt.model.sm.entity.PropertyField;
-import mdt.model.sm.entity.SMListField;
-import mdt.model.sm.entity.SubmodelElementCollectionEntity;
-import mdt.model.sm.value.PropertyValue;
 
 /**
  *
@@ -75,25 +71,25 @@ public class JpaEquipment extends SubmodelElementCollectionEntity implements Equ
 						.toList();
 	}
 
-	@Override
-	public void update(String idShortPath, Object value) {
-		List<String> pathSegs = SubmodelUtils.parseIdShortPath(idShortPath).toList();
-		
-		String seg0 = pathSegs.get(0);
-		Preconditions.checkArgument("EquipmentParameters".equals(seg0),
-									"'EquipmentParameters' is expected, but={}", seg0);
-		
-		String seg1 = pathSegs.get(1);
-		ParameterValue pvalue;
-		try {
-			int ordinal = Integer.parseInt(seg1);
-			pvalue = this.parameterValues.get(ordinal);
-		}
-		catch ( NumberFormatException e ) {
-			pvalue = Try.get(() -> getParameterValue(seg1)).getOrNull();
-		}
-		FOption.accept(pvalue, pv -> pv.setParameterValue(new PropertyValue((String)value)));
-	}
+//	@Override
+//	public void update(String idShortPath, Object value) {
+//		List<String> pathSegs = SubmodelUtils.parseIdShortPath(idShortPath).toList();
+//		
+//		String seg0 = pathSegs.get(0);
+//		Preconditions.checkArgument("EquipmentParameters".equals(seg0),
+//									"'EquipmentParameters' is expected, but={}", seg0);
+//		
+//		String seg1 = pathSegs.get(1);
+//		ParameterValue pvalue;
+//		try {
+//			int ordinal = Integer.parseInt(seg1);
+//			pvalue = this.parameterValues.get(ordinal);
+//		}
+//		catch ( NumberFormatException e ) {
+//			pvalue = Try.get(() -> getParameterValue(seg1)).getOrNull();
+//		}
+//		FOption.accept(pvalue, pv -> pv.setParameterValue(new PropertyValue((String)value)));
+//	}
 	
 	@Override
 	public String toString() {

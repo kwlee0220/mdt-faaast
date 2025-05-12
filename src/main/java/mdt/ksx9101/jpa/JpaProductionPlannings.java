@@ -36,7 +36,7 @@ public class JpaProductionPlannings
 			JpaProductionPlannings entity = new JpaProductionPlannings();
 			TypedQuery<JpaProductionPlanning> query
 					= em.createQuery("select r from JpaProductionPlanning r", JpaProductionPlanning.class);
-			entity.setMemberList(query.getResultList());
+			entity.setElementAll(query.getResultList());
 			
 			return entity;
 		}

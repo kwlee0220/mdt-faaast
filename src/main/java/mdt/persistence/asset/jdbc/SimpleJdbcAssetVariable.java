@@ -22,8 +22,8 @@ import mdt.persistence.asset.AssetVariableException;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class JdbcAssetVariable extends AbstractJdbcAssetVariable<JdbcAssetVariableConfig> {
-	public JdbcAssetVariable(JdbcAssetVariableConfig config) {
+public class SimpleJdbcAssetVariable extends AbstractJdbcAssetVariable<SimpleJdbcAssetVariableConfig> {
+	public SimpleJdbcAssetVariable(SimpleJdbcAssetVariableConfig config) {
 		super(config);
 	}
 
@@ -32,20 +32,19 @@ public class JdbcAssetVariable extends AbstractJdbcAssetVariable<JdbcAssetVariab
         return m_config.getUpdateQuery() != null;
     }
 
-	@SuppressWarnings("unchecked")
 	public void load(Connection conn) throws AssetVariableException {
 		Preconditions.checkArgument(conn != null, "Connection is null");
 		
 		try ( Statement stmt = conn.createStatement();
 				ResultSet rs = stmt.executeQuery(m_config.getReadQuery())) {
 			if ( rs.next() ) {
-				String value = rs.getString(1);
+				Object value = rs.getObject(1);
 				if ( getDataType() != null ) {
 					((Property)m_buffer).setValue(getDataType().toValueString(value));
 				}
-				else {
+				else if ( value != null ) {
 					try {
-						updateWithValueJsonString(m_buffer, value);
+						updateWithValueJsonString(m_buffer, ""+value);
 					}
 					catch ( IOException e ) {
 						String msg = String.format("Failed to update %s with value=%s", this, value);
@@ -55,7 +54,9 @@ public class JdbcAssetVariable extends AbstractJdbcAssetVariable<JdbcAssetVariab
 				setLastUpdatedTime(Instant.now());
 			}
 			else {
-				throw new ResourceNotFoundException("JdbcAssetVariable", m_config.getReadQuery());
+				((Property)m_buffer).setValue("");
+				setLastUpdatedTime(Instant.now());
+//				throw new ResourceNotFoundException("JdbcAssetVariable", m_config.getReadQuery());
 			}
 		}
 		catch ( SQLException e ) {

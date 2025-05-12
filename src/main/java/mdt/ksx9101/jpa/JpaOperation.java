@@ -9,13 +9,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
-import utils.func.FOption;
-import utils.func.Try;
 import utils.stream.FStream;
 
 import mdt.ksx9101.JpaEntityLoader;
 import mdt.model.TopLevelEntity;
-import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.data.Operation;
 import mdt.model.sm.data.Parameter;
 import mdt.model.sm.data.ParameterValue;
@@ -23,7 +20,6 @@ import mdt.model.sm.data.ProductionOrder;
 import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SMListField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;
-import mdt.model.sm.value.PropertyValue;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -101,25 +97,25 @@ public class JpaOperation extends SubmodelElementCollectionEntity implements Ope
 	}
 
 
-	@Override
-	public void update(String idShortPath, Object value) {
-		List<String> pathSegs = SubmodelUtils.parseIdShortPath(idShortPath).toList();
-		
-		String seg0 = pathSegs.get(0);
-		Preconditions.checkArgument("OperationParameters".equals(seg0),
-									"'OperationParameters' is expected, but={}", seg0);
-		
-		String seg1 = pathSegs.get(1);
-		ParameterValue pvalue;
-		try {
-			int ordinal = Integer.parseInt(seg1);
-			pvalue = this.parameterValueList.get(ordinal);
-		}
-		catch ( NumberFormatException e ) {
-			pvalue = Try.get(() -> getParameterValue(seg1)).getOrNull();
-		}
-		FOption.accept(pvalue, pv -> pv.setParameterValue(new PropertyValue((String)value)));
-	}
+//	@Override
+//	public void update(String idShortPath, Object value) {
+//		List<String> pathSegs = SubmodelUtils.parseIdShortPath(idShortPath).toList();
+//		
+//		String seg0 = pathSegs.get(0);
+//		Preconditions.checkArgument("OperationParameters".equals(seg0),
+//									"'OperationParameters' is expected, but={}", seg0);
+//		
+//		String seg1 = pathSegs.get(1);
+//		ParameterValue pvalue;
+//		try {
+//			int ordinal = Integer.parseInt(seg1);
+//			pvalue = this.parameterValueList.get(ordinal);
+//		}
+//		catch ( NumberFormatException e ) {
+//			pvalue = Try.get(() -> getParameterValue(seg1)).getOrNull();
+//		}
+//		FOption.accept(pvalue, pv -> pv.setParameterValue(new PropertyValue((String)value)));
+//	}
 	
 	public static JpaOperation load(EntityManager em, Object key) {
 		Preconditions.checkArgument(key != null && key instanceof String);

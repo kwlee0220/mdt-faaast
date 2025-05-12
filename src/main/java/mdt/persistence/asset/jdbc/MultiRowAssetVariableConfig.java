@@ -1,28 +1,46 @@
 package mdt.persistence.asset.jdbc;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.func.FOption;
+import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
-import mdt.model.MDTModelSerDe;
+import mdt.ElementLocation;
 import mdt.persistence.asset.AssetVariableConfig;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MultiRowAssetVariableConfig extends JdbcAssetVariableConfigBase implements AssetVariableConfig {
+public class MultiRowAssetVariableConfig extends AbstractJdbcAssetVariableConfig implements AssetVariableConfig {
+	public static final String SERIALIZATION_TYPE = "mdt:asset:jdbc:multi-row";
+
+	private static final String FIELD_READ_QUERY = "readQuery";
+	private static final String FIELD_UPDATE_QUERY = "updateQuery";
+	private static final String FIELD_ROWS = "rows";
+	
 	private String m_readQuery;
 	@Nullable private String m_updateQuery;
 	private List<RowDefConfig> m_rowDefs;
+	
+	private MultiRowAssetVariableConfig()  { }
+	public MultiRowAssetVariableConfig(ElementLocation elementKey,
+										@Nullable String jdbcConfigKey, @Nullable Duration validPeriod,
+										String readQuery, @Nullable String updateQuery, List<RowDefConfig> rowDefs) {
+		super(elementKey, jdbcConfigKey, validPeriod);
+		
+		m_readQuery = readQuery;
+		m_updateQuery = updateQuery;
+		m_rowDefs = rowDefs;
+	}
 	
 	public String getReadQuery() {
 		return m_readQuery;
@@ -37,41 +55,42 @@ public class MultiRowAssetVariableConfig extends JdbcAssetVariableConfigBase imp
 	}
 
 	@Override
-	public void serialize(JsonGenerator gen) throws IOException {
-		gen.writeStartObject();
-		gen.writeStringField("@class", MultiRowAssetVariable.class.getName());
-		super.serialize(gen);
-
-		gen.writeStringField("readQuery", m_readQuery);
-		FOption.acceptOrThrow(m_updateQuery, query -> gen.writeStringField("updateQuery", query));
-		gen.writeArrayFieldStart("rows");
-		FStream.from(this.m_rowDefs).forEachOrThrow(gen::writeObject);
-		gen.writeEndArray();
-		
-		gen.writeEndObject();
+	public String getSerializationType() {
+		return SERIALIZATION_TYPE;
 	}
-	
-	public static MultiRowAssetVariableConfig parseJson(JsonNode jnode) throws IOException {
-		MultiRowAssetVariableConfig config = new MultiRowAssetVariableConfig();
-		parseJson(config, jnode);
+
+	@Override
+	public void serializeFields(JsonGenerator gen) throws IOException {
+		super.serializeFields(gen);
 		
-		config.m_readQuery = FOption.ofNullable(jnode.get("readQuery"))
+		gen.writeStringField(FIELD_READ_QUERY, m_readQuery);
+		FOption.acceptOrThrow(m_updateQuery, q -> gen.writeStringField(FIELD_UPDATE_QUERY, q));
+		
+		gen.writeArrayFieldStart(FIELD_ROWS);
+		FStream.from(this.m_rowDefs).forEachOrThrow(col -> col.serialize(gen));
+		gen.writeEndArray();
+	}
+
+	public static MultiRowAssetVariableConfig deserializeFields(JsonNode jnode) {
+		MultiRowAssetVariableConfig config = new MultiRowAssetVariableConfig();
+		config.loadFields(jnode);
+		
+		config.m_readQuery = FOption.ofNullable(jnode.get(FIELD_READ_QUERY))
 									.map(JsonNode::asText)
-									.getOrThrow(() -> new IllegalArgumentException("missing 'readQuery' field"));
-		config.m_updateQuery = FOption.map(jnode.get("updateQuery"), JsonNode::asText);
+									.getOrThrow(() -> new IllegalArgumentException("missing '" + FIELD_READ_QUERY + "' field"));
+		config.m_updateQuery = FOption.map(jnode.get(FIELD_UPDATE_QUERY), JsonNode::asText);
 		config.m_rowDefs = FStream.from(jnode.get("rows").elements())
-								.mapOrThrow(json -> MDTModelSerDe.getJsonMapper().treeToValue(json, RowDefConfig.class))
-								.toList();
+									.mapOrThrow(RowDefConfig::deserialize)
+									.toList();
 		
 		return config;
 	}
 
 	public static class RowDefConfig {
-		@JsonProperty("key") private final String m_key;
-		@JsonProperty("path") private final String m_path;
+		private final String m_key;
+		private final String m_path;
 		
-		public RowDefConfig(@JsonProperty("key") String key,
-							@JsonProperty("path") String path) {
+		public RowDefConfig(String key, String path) {
 			m_key = key;
 			m_path = path;
 		}
@@ -82,6 +101,24 @@ public class MultiRowAssetVariableConfig extends JdbcAssetVariableConfigBase imp
 
 		public String getPath() {
 			return m_path;
+		}
+		
+		private void serialize(JsonGenerator gen) throws IOException {
+			gen.writeStartObject();
+			gen.writeStringField("key", m_key);
+			gen.writeStringField("path", m_path);
+			gen.writeEndObject();
+		}
+		
+		private static RowDefConfig deserialize(JsonNode jnode) {
+			return FStream.from(jnode.fields())
+							.map(ent -> {
+								String key = JacksonUtils.getStringField(jnode, "key");
+								String path = JacksonUtils.getStringField(jnode, "path");
+								return new RowDefConfig(key, path);
+							})
+							.findFirst()
+							.get();
 		}
 	};
 }

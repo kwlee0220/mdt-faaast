@@ -6,12 +6,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import utils.stream.FStream;
 
 import de.fraunhofer.iosb.ilt.faaast.service.persistence.PersistenceConfig;
+import lombok.Getter;
+import lombok.Setter;
 
 
 /**

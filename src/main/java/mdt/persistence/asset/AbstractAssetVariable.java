@@ -16,20 +16,20 @@ import com.google.common.base.Preconditions;
 import utils.LoggerSettable;
 import utils.func.FOption;
 
+import mdt.ElementLocation;
 import mdt.aas.DataType;
 import mdt.aas.DataTypes;
 import mdt.model.MDTModelSerDe;
 import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.value.SubmodelElementValue;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class AbstractAssetVariable<T extends AssetVariableConfig>
-																		implements AssetVariable, LoggerSettable {
+public abstract class AbstractAssetVariable<T extends AssetVariableConfig> implements AssetVariable, LoggerSettable {
 	private static final Logger s_logger = LoggerFactory.getLogger(AbstractAssetVariable.class);
 	
 	protected final T m_config;
@@ -43,13 +43,8 @@ public abstract class AbstractAssetVariable<T extends AssetVariableConfig>
 	}
 
 	@Override
-	public String getSubmodelIdShort() {
-		return m_config.getSubmodelIdShort();
-	}
-
-	@Override
-	public String getElementPath() {
-		return m_config.getElementPath();
+	public ElementLocation getElementLocation() {
+		return m_config.getElementLocation();
 	}
 	
 	public Duration getValidPeriod() {
@@ -64,7 +59,7 @@ public abstract class AbstractAssetVariable<T extends AssetVariableConfig>
 	@Override
 	public void bind(Submodel submodel) {
 		// 검색된 Submodel 내에서 본 element에 해당하는 SubmodelElement를 찾는다.
-		m_buffer = SubmodelUtils.traverse(submodel, getElementPath());
+		m_buffer = SubmodelUtils.traverse(submodel, getElementLocation().getElementPath());
 		if ( m_buffer instanceof Property prop ) {
 			m_type = DataTypes.fromAas4jDatatype(prop.getValueType());
 		}
@@ -99,14 +94,14 @@ public abstract class AbstractAssetVariable<T extends AssetVariableConfig>
 	
 	@Override
 	public String toString() {
-		return String.format("%s[%s/%s]", getClass().getSimpleName(), getSubmodelIdShort(), getElementPath());
+		return String.format("%s[%s]", getClass().getSimpleName(), getElementLocation());
 	}
 
 	private void assertSubmodelElement() {
 		Preconditions.checkState(m_buffer != null, "SubmodelElement has not been bound: {}", this);
 	}
 
-	protected void update(SubmodelElement buffer, SubmodelElementValue smev) {
+	protected void update(SubmodelElement buffer, ElementValue smev) {
 		ElementValues.update(buffer, smev);
 	}
 

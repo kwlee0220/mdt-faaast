@@ -14,11 +14,20 @@ import utils.func.FOption;
 import de.fraunhofer.iosb.ilt.faaast.service.endpoint.EndpointConfig;
 
 /**
- *
+ * {@link MDTInstanceAutoShutdown}의 설정 정보를 표현하는 클래스.
+ * <p>
+ * JSON 형식:
+ * <pre><code>
+ * {
+ *    "mdtEndpoint": <확인 대상 MDTManager의 접속 endpoint> (예: "http://localhost:8080/mdt"),
+ *    "checkInterval": <접속 확인 주기> (예: "10s", "1m", "100ms"),
+ *    "enabled": <접속 확인 활성화 여부> (예: true, false)
+ * }</code></pre>
+ * 
  * @author Kang-Woo Lee (ETRI)
  */
 @JsonInclude(Include.NON_NULL)
-public class MDTManagerHealthMonitorConfig extends EndpointConfig<MDTManagerHealthMonitor> {
+public class MDTManagerHealthMonitorConfig extends EndpointConfig<MDTInstanceAutoShutdown> {
 	private final String m_mdtEndpoint;
 	private final Duration m_checkInterval;
 	private final boolean m_enabled; 

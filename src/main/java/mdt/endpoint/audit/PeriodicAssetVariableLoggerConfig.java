@@ -7,16 +7,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import utils.UnitUtils;
 import utils.stream.FStream;
 
-import mdt.ElementColumnConfig;
-
 import de.fraunhofer.iosb.ilt.faaast.service.endpoint.EndpointConfig;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mdt.ElementColumnConfig;
 
 
 /**

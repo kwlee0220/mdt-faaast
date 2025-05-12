@@ -26,7 +26,7 @@ import mdt.persistence.asset.AssetVariableException;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class AbstractJdbcAssetVariable<T extends JdbcAssetVariableConfigBase>
+public abstract class AbstractJdbcAssetVariable<T extends AbstractJdbcAssetVariableConfig>
 																				extends AbstractAssetVariable<T>
 																				implements AssetVariable {
 	private final JdbcProcessor m_jdbc;
@@ -89,8 +89,8 @@ public abstract class AbstractJdbcAssetVariable<T extends JdbcAssetVariableConfi
 	
 	@Override
 	public String toString() {
-		return String.format("%s[%s/%s, jdbc=%s]",
-							getClass().getSimpleName(), getSubmodelIdShort(), getElementPath(),
+		return String.format("%s[%s, jdbc=%s]",
+							getClass().getSimpleName(), getElementLocation(),
 							m_config.getJdbcConfigKey());
 	}
 	

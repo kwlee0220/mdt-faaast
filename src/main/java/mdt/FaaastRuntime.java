@@ -9,7 +9,6 @@ import utils.func.Funcs;
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
 import de.fraunhofer.iosb.ilt.faaast.service.model.api.request.submodel.GetSubmodelElementByPathRequest;
-import de.fraunhofer.iosb.ilt.faaast.service.model.api.request.submodel.PatchSubmodelElementByPathRequest;
 import de.fraunhofer.iosb.ilt.faaast.service.util.ReferenceHelper;
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;

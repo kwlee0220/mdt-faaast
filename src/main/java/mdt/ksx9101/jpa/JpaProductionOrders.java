@@ -35,7 +35,7 @@ public class JpaProductionOrders extends SubmodelElementListEntity<JpaProduction
 			JpaProductionOrders entity = new JpaProductionOrders();
 			TypedQuery<JpaProductionOrder> query
 					= em.createQuery("select r from JpaProductionOrder r", JpaProductionOrder.class);
-			entity.setMemberList(query.getResultList());
+			entity.setElementAll(query.getResultList());
 			
 			return entity;
 		}

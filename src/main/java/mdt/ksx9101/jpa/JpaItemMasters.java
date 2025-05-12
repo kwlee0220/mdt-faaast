@@ -34,7 +34,7 @@ public class JpaItemMasters extends SubmodelElementListEntity<JpaItemMaster>
 		public JpaItemMasters load(EntityManager em, Object key) {
 			JpaItemMasters entity = new JpaItemMasters();
 			TypedQuery<JpaItemMaster> query = em.createQuery("select r from JpaItemMaster r", JpaItemMaster.class);
-			entity.setMemberList(query.getResultList());
+			entity.setElementAll(query.getResultList());
 			
 			return entity;
 		}

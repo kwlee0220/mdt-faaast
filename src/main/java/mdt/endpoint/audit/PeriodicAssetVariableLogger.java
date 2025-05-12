@@ -16,16 +16,15 @@ import utils.jdbc.JdbcProcessor;
 import utils.jdbc.JdbcUtils;
 import utils.stream.FStream;
 
-import mdt.ElementColumnConfig;
-import mdt.ElementHandle;
-import mdt.FaaastRuntime;
-import mdt.MDTGlobalConfigurations;
-
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.config.CoreConfig;
 import de.fraunhofer.iosb.ilt.faaast.service.endpoint.Endpoint;
 import de.fraunhofer.iosb.ilt.faaast.service.exception.ConfigurationInitializationException;
 import de.fraunhofer.iosb.ilt.faaast.service.exception.EndpointException;
+import mdt.ElementColumnConfig;
+import mdt.ElementHandle;
+import mdt.FaaastRuntime;
+import mdt.MDTGlobalConfigurations;
 
 /**
  *

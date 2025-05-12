@@ -1,22 +1,21 @@
-package mdt.persistence;
+package mdt.persistence.asset;
 
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 
-import de.fraunhofer.iosb.ilt.faaast.service.persistence.PersistenceConfig;
-import mdt.persistence.asset.AssetVariableConfig;
+import mdt.persistence.PersistenceStackConfig;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MDTPersistenceConfig extends PersistenceConfig<MDTPersistence> {
+public class AssertVariableBasedPersistenceConfig extends PersistenceStackConfig<AssertVariableBasedPersistence> {
 	private final List<AssetVariableConfig> m_assetVariableConfigs;
 	
-	public MDTPersistenceConfig(@JsonProperty("assetVariables") List<AssetVariableConfig> configs) {
+	public AssertVariableBasedPersistenceConfig(@JsonProperty("assetVariables") List<AssetVariableConfig> configs) {
 		Preconditions.checkArgument(configs != null, "null assetVariables");
 		
 		m_assetVariableConfigs = configs;

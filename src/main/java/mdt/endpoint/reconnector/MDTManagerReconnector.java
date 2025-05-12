@@ -13,6 +13,7 @@ import utils.Throwables;
 import utils.func.Unchecked;
 import utils.http.HttpRESTfulClient;
 import utils.http.JacksonErrorEntityDeserializer;
+import utils.http.RESTfulIOException;
 
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.config.CoreConfig;
@@ -95,8 +96,11 @@ public class MDTManagerReconnector extends AbstractScheduledService
 
 			m_restfulClient.post(m_registerUrl, m_reqBody, HttpRESTfulClient.STRING_DESER);
 		}
-		catch ( Exception e ) {
+		catch ( Throwable e ) {
 			if ( s_logger.isInfoEnabled() ) {
+				if ( e instanceof RESTfulIOException rio ) {
+					e = rio.getCause();
+				}
 				Throwable cause = Throwables.unwrapThrowable(e);
 				s_logger.info("Failed to connect MDTManager: url={}, cause={}",
 								m_registerUrl, ""+cause);

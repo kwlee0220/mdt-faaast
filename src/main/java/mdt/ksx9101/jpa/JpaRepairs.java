@@ -33,7 +33,7 @@ public class JpaRepairs extends SubmodelElementListEntity<JpaRepair> implements 
 		public JpaRepairs load(EntityManager em, Object key) {
 			JpaRepairs entity = new JpaRepairs();
 			TypedQuery<JpaRepair> query = em.createQuery("select r from JpaRepair r", JpaRepair.class);
-			entity.setMemberList(query.getResultList());
+			entity.setElementAll(query.getResultList());
 			
 			return entity;
 		}

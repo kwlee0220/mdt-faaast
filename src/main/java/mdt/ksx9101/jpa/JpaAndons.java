@@ -33,7 +33,7 @@ public class JpaAndons extends SubmodelElementListEntity<JpaAndon> implements An
 		public JpaAndons load(EntityManager em, Object key) {
 			JpaAndons entity = new JpaAndons();
 			TypedQuery<JpaAndon> query = em.createQuery("select r from JpaAndon r", JpaAndon.class);
-			entity.setMemberList(query.getResultList());
+			entity.setElementAll(query.getResultList());
 			
 			return entity;
 		}

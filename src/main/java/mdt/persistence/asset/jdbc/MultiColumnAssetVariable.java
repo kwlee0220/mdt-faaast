@@ -81,7 +81,7 @@ public class MultiColumnAssetVariable extends AbstractJdbcAssetVariable<MultiCol
 
 	@Override
 	protected void save(Connection conn) throws AssetVariableException {
-		try ( PreparedStatement pstmt = conn.prepareStatement(m_config.getUpdateSql()) ) {
+		try ( PreparedStatement pstmt = conn.prepareStatement(m_config.getUpdateQuery()) ) {
 			FStream.from(m_columns.values())
 					.zipWithIndex(1)
 					.forEachOrThrow(idxed -> {
@@ -92,7 +92,7 @@ public class MultiColumnAssetVariable extends AbstractJdbcAssetVariable<MultiCol
 			pstmt.execute();
 		}
 		catch ( SQLException e ) {
-			String msg = String.format("Failed to write %s with query: %s", this, m_config.getUpdateSql());
+			String msg = String.format("Failed to write %s with query: %s", this, m_config.getUpdateQuery());
 			throw new AssetVariableException(msg, e);
 		}
 	}

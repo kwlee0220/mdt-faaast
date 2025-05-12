@@ -13,18 +13,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import utils.InternalException;
-import utils.KeyValue;
 import utils.async.CommandExecution;
 import utils.async.CommandVariable;
 import utils.async.CommandVariable.FileVariable;
 import utils.io.FileUtils;
 import utils.io.IOUtils;
 import utils.stream.FStream;
+import utils.stream.KeyValueFStream;
 
 import mdt.client.operation.OperationUtils;
 import mdt.model.AASUtils;
 import mdt.model.MDTModelSerDe;
 import mdt.model.sm.value.ElementValues;
+import mdt.task.TaskException;
 import mdt.task.builtin.ProgramOperationDescriptor;
 
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
@@ -38,8 +39,6 @@ import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
 class ProgramOperationProvider implements OperationProvider {
 	private static final Logger s_logger = LoggerFactory.getLogger(ProgramOperationProvider.class);
 	
-//	private final ServiceContext m_svcContext;
-//	private final Reference m_operationRef;
 	private final ProgramOperationProviderConfig m_config;
 	private final File m_opDescFile;
 	
@@ -47,12 +46,9 @@ class ProgramOperationProvider implements OperationProvider {
 	
 	ProgramOperationProvider(ServiceContext serviceContext, Reference operationRef,
 								ProgramOperationProviderConfig config) throws IOException {
-//		m_svcContext = serviceContext;
-//		m_operationRef = operationRef;
 		m_config = config;
 		
-		m_opDescFile = FileUtils.path(FileUtils.getCurrentWorkingDirectory(),
-									m_config.getDescriptorFile());
+		m_opDescFile = FileUtils.path(FileUtils.getCurrentWorkingDirectory(), m_config.getOperationDescriptorFile());
 		if ( m_opDescFile.isFile() && m_opDescFile.canRead() ) {
 			if ( s_logger.isInfoEnabled() ) {
 				IdShortPath idShortPath = IdShortPath.fromReference(operationRef);
@@ -71,6 +67,7 @@ class ProgramOperationProvider implements OperationProvider {
 		ProgramOperationDescriptor opDesc = ProgramOperationDescriptor.load(m_opDescFile,
 																			MDTModelSerDe.getJsonMapper());
 		if ( opDesc.getWorkingDirectory() == null ) {
+			// 작업 디렉토리가 지정되지 않은 경우는 연산 기술자 파일이 속한 디렉토리로 설정한다.
 			opDesc.setWorkingDirectory(m_opDescFile.getParentFile());
 		}
 		
@@ -83,7 +80,7 @@ class ProgramOperationProvider implements OperationProvider {
 		FStream.of(inputVars)
 				.concatWith(FStream.of(inoutputVars))
 				.concatWith(FStream.of(outputVars))
-				.map(opv -> newCommandVariable(workingDir, opv))
+				.mapOrThrow(opv -> newCommandVariable(workingDir, opv))
 				.forEach(builder::addVariable);
 
 		// stdout/stderr redirection
@@ -98,20 +95,12 @@ class ProgramOperationProvider implements OperationProvider {
 			}
 
 			FStream.of(inoutputVars)
-					.innerJoin(FStream.from(m_cmdExec.getVariableMap()), opv -> opv.getValue().getIdShort(), KeyValue::key)
+					.concatWith(FStream.of(outputVars))
+					.tagKey(v -> v.getValue().getIdShort())
+					.innerJoin(KeyValueFStream.from(m_cmdExec.getVariableMap()))
 					.forEachOrThrow(match -> {
-						OperationVariable opv = match._1;
-						CommandVariable var = match._2.value();
-						
-						SubmodelElement old = opv.getValue();
-						ElementValues.updateWithRawString(old, var.getValue());
-					});
-
-			FStream.of(outputVars)
-					.innerJoin(FStream.from(m_cmdExec.getVariableMap()), opv -> opv.getValue().getIdShort(), KeyValue::key)
-					.forEachOrThrow(match -> {
-						OperationVariable opv = match._1;
-						CommandVariable var = match._2.value();
+						OperationVariable opv = match.value()._1;
+						CommandVariable var = match.value()._2;
 						
 						SubmodelElement old = opv.getValue();
 						ElementValues.updateWithRawString(old, var.getValue());
@@ -122,7 +111,7 @@ class ProgramOperationProvider implements OperationProvider {
 		}
 	}
 	
-	private FileVariable newCommandVariable(File workingDir, OperationVariable opv) {
+	private FileVariable newCommandVariable(File workingDir, OperationVariable opv) throws TaskException {
 		SubmodelElement data = opv.getValue();
 		String name = data.getIdShort();
 		
@@ -130,6 +119,10 @@ class ProgramOperationProvider implements OperationProvider {
 		try {
 			if ( data instanceof org.eclipse.digitaltwin.aas4j.v3.model.File aasFile ) {
 				String path = aasFile.getValue();
+				if ( path == null ) {
+					String details = String.format("AASFile has empty path: OperationVariable[%s]", name);
+					throw new TaskException(details);
+				}
 				cvFile = new File(workingDir, path);
 				
 				String encodedPath = AASUtils.encodeBase64UrlSafe(path);

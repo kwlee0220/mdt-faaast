@@ -41,7 +41,7 @@ public class JpaEquipments extends SubmodelElementListEntity<JpaEquipment>
 			
 			JpaEquipments entity = new JpaEquipments();
 			TypedQuery<JpaEquipment> query = em.createQuery(jpql, JpaEquipment.class);
-			entity.setMemberList(query.getResultList());
+			entity.setElementAll(query.getResultList());
 			
 			return entity;
 		}

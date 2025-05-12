@@ -10,7 +10,6 @@ import utils.jdbc.JdbcConfiguration;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-
 import mdt.ksx9101.jpa.JpaPersistenceUnitInfo;
 
 /**

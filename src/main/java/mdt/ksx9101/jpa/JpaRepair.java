@@ -5,7 +5,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-
 import mdt.model.sm.data.Repair;
 import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;

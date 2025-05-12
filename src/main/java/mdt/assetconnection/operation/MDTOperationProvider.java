@@ -1,6 +1,7 @@
 package mdt.assetconnection.operation;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -10,16 +11,20 @@ import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
+import utils.InternalException;
 import utils.Throwables;
 import utils.stream.FStream;
 
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
 import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetOperationProvider;
+import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
 import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ResourceNotFoundException;
 import de.fraunhofer.iosb.ilt.faaast.service.util.ReferenceHelper;
 
@@ -29,6 +34,8 @@ import de.fraunhofer.iosb.ilt.faaast.service.util.ReferenceHelper;
  * @author Kang-Woo Lee (ETRI)
  */
 public class MDTOperationProvider implements AssetOperationProvider {
+	private static final Logger s_logger = LoggerFactory.getLogger(MDTOperationProvider.class);
+	
 	private final ServiceContext m_serviceContext;
 	private final Reference m_opRef;
 	private final List<OperationVariable> m_outputVariables;
@@ -58,7 +65,7 @@ public class MDTOperationProvider implements AssetOperationProvider {
 		
         try {
 	    	if ( m_config.getJava() != null ) {
-	    		m_opProvider = new JavaOperationProvider(serviceContext, m_opRef, m_config.getJava());
+	    		m_opProvider = createJavaOperationProvider(serviceContext, m_opRef, m_config.getJava());
 	    	}
 	    	else if ( m_config.getProgram() != null ) {
 				m_opProvider = new ProgramOperationProvider(serviceContext, m_opRef, m_config.getProgram());
@@ -121,5 +128,33 @@ public class MDTOperationProvider implements AssetOperationProvider {
 													.value("")
 													.build();
 		return new DefaultOperationVariable.Builder().value(defProp).build();
+	}
+	
+	private OperationProvider createJavaOperationProvider(ServiceContext serviceContext,
+                                            			Reference opRef, JavaOperationProviderConfig javaOpConfig) {
+		try {
+			// Java 연산 제공자 객체를 생성한다.
+			//
+			String opClsName = javaOpConfig.getOperationClassName();
+			
+			@SuppressWarnings("unchecked")
+			Class<? extends OperationProvider> opCls = (Class<? extends OperationProvider>)Class.forName(opClsName);
+			Constructor<? extends OperationProvider> ctor = opCls.getConstructor(ServiceContext.class, Reference.class,
+																				JavaOperationProviderConfig.class);
+			OperationProvider provider = ctor.newInstance(serviceContext, opRef, javaOpConfig);
+			
+			if ( s_logger.isInfoEnabled() ) {
+				IdShortPath idShortPath = IdShortPath.fromReference(opRef);
+				s_logger.info("Load JavaOperation: op-ref={}, provider={}",
+								idShortPath, javaOpConfig.getOperationClassName());
+			}
+			return provider;
+		}
+		catch ( Exception e ) {
+			Throwable cause = Throwables.unwrapThrowable(e);
+			String msg = String.format("Failed to load JavaOperation: class=%s", javaOpConfig.getOperationClassName());
+			s_logger.info("{}, cause={}", msg, cause);
+			throw new InternalException(msg, cause);
+		}
 	}
 }

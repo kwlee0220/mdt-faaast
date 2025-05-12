@@ -7,7 +7,6 @@ import jakarta.persistence.TypedQuery;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.JpaEntityLoader;
-import mdt.model.sm.data.BOM;
 import mdt.model.sm.data.BOMs;
 import mdt.model.sm.entity.SubmodelElementListEntity;
 
@@ -34,7 +33,7 @@ public class JpaBOMs extends SubmodelElementListEntity<JpaBOM> implements BOMs {
 		public JpaBOMs load(EntityManager em, Object key) {
 			JpaBOMs entity = new JpaBOMs();
 			TypedQuery<JpaBOM> query = em.createQuery("select r from JpaBOM r", JpaBOM.class);
-			entity.setMemberList(query.getResultList());
+			entity.setElementAll(query.getResultList());
 			
 			return entity;
 		}

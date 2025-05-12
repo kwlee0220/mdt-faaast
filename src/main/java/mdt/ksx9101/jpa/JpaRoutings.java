@@ -34,7 +34,7 @@ public class JpaRoutings extends SubmodelElementListEntity<JpaRouting>
 		public JpaRoutings load(EntityManager em, Object key) {
 			JpaRoutings entity = new JpaRoutings();
 			TypedQuery<JpaRouting> query = em.createQuery("select r from JpaRouting r", JpaRouting.class);
-			entity.setMemberList(query.getResultList());
+			entity.setElementAll(query.getResultList());
 			
 			return entity;
 		}

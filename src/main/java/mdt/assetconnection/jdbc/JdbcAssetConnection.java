@@ -8,14 +8,13 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import utils.jdbc.JdbcConfiguration;
 import utils.jdbc.JdbcProcessor;
 
+import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AbstractAssetConnection;
+import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
 import mdt.MDTGlobalConfigurations;
 import mdt.assetconnection.UnsupportedOperationProvider;
 import mdt.assetconnection.UnsupportedOperationProviderConfig;
 import mdt.assetconnection.UnsupportedSubscriptionProvider;
 import mdt.assetconnection.UnsupportedSubscriptionProviderConfig;
-
-import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AbstractAssetConnection;
-import de.fraunhofer.iosb.ilt.faaast.service.assetconnection.AssetConnectionException;
 
 /**
  *

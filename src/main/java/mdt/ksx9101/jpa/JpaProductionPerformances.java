@@ -36,7 +36,7 @@ public class JpaProductionPerformances
 			JpaProductionPerformances entity = new JpaProductionPerformances();
 			TypedQuery<JpaProductionPerformance> query
 				= em.createQuery("select r from JpaProductionPerformance r", JpaProductionPerformance.class);
-			entity.setMemberList(query.getResultList());
+			entity.setElementAll(query.getResultList());
 			
 			return entity;
 		}

@@ -4,11 +4,11 @@ plugins {
 }
 
 group = 'etri'
-version = '0.9.1'
+version = '1.0.0'
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_17
-	targetCompatibility = JavaVersion.VERSION_17
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
 	
 //	withSourcesJar()
 //	withJavadocJar()
@@ -70,9 +70,17 @@ dependencies {
 	
 	// PostgreSQL
 	implementation "org.postgresql:postgresql:${postgresql_version}"
+	
+	// Apache libraries
+	implementation "org.apache.commons:commons-text:${commons_text_version}"
+	
+	// MQTT
+	implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:${paho_version}"
 
 	// Spring Framework
 	implementation "org.springframework.data:spring-data-jpa:${spring_data_version}"
+	
+	testImplementation "junit:junit:${junit_version}"
 }
 configurations {
 	all {

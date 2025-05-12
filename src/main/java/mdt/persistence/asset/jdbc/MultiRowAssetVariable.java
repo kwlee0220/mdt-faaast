@@ -39,7 +39,8 @@ public class MultiRowAssetVariable extends AbstractJdbcAssetVariable<MultiRowAss
 		
 		m_rowDefs = FStream.from(config.getRowDefs())
 							.map(RowDef::new)
-							.toMap(rd -> rd.m_key);
+							.tagKey(rd -> rd.m_key)
+							.toMap();
 	}
 
 	@Override
@@ -89,7 +90,7 @@ public class MultiRowAssetVariable extends AbstractJdbcAssetVariable<MultiRowAss
 			}
 		}
 		catch ( SQLException e ) {
-			String msg = String.format("Failed to save %s: path=%s", this, getElementPath());
+			String msg = String.format("Failed to save %s: path=%s", this, getElementLocation().getElementPath());
 			throw new AssetVariableException(msg, e);
 		}
 	}

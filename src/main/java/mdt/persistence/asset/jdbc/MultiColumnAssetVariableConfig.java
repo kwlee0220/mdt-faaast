@@ -1,15 +1,18 @@
 package mdt.persistence.asset.jdbc;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
-import mdt.model.MDTModelSerDe;
+import mdt.ElementLocation;
 import mdt.persistence.asset.AssetVariableConfig;
 
 
@@ -17,7 +20,12 @@ import mdt.persistence.asset.AssetVariableConfig;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MultiColumnAssetVariableConfig extends JdbcAssetVariableConfigBase implements AssetVariableConfig {
+public class MultiColumnAssetVariableConfig extends AbstractJdbcAssetVariableConfig implements AssetVariableConfig {
+	public static final String SERIALIZATION_TYPE = "mdt:asset:jdbc:multi-column";
+	private static final String FIELD_TABLE = "table";
+	private static final String FIELD_WHERE_CLAUSE = "whereClause";
+	private static final String FIELD_COLUMNS = "columns";
+	
 	private static String READ_QUERY_FORMAT = "select %s from %s %s";
 	private static String UPDATE_QUERY_FORMAT = "update %s set %s %s";
 	
@@ -25,71 +33,103 @@ public class MultiColumnAssetVariableConfig extends JdbcAssetVariableConfigBase 
 	private String m_whereClause;
 	private List<ColumnConfig> m_columns;
 	private String m_readQuery;
-	private String m_updateSql;
+	private String m_updateQuery;
+	
+	private MultiColumnAssetVariableConfig()  {}
+	public MultiColumnAssetVariableConfig(ElementLocation elementKey,
+											@Nullable String jdbcConfigKey, @Nullable Duration validPeriod,
+											String table, String whereClause, List<ColumnConfig> columns)  {
+		super(elementKey, jdbcConfigKey, validPeriod);
+		
+		m_table = table;
+		m_whereClause = whereClause;
+		m_columns = columns;
+	}
 	
 	public List<ColumnConfig> getColumns() {
         return m_columns;
     }
 	
 	public String getReadQuery() {
+		if ( m_readQuery == null ) {
+			String colCsv = FStream.from(m_columns).map(ColumnConfig::getName).join(", ");
+			m_readQuery = String.format(READ_QUERY_FORMAT, colCsv, m_table, m_whereClause);
+		}
 		return m_readQuery;
 	}
 	
-	public String getUpdateSql() {
-		return m_updateSql;
+	public String getUpdateQuery() {
+		if ( m_updateQuery == null ) {
+			String setClause = FStream.from(m_columns)
+										.map(col -> String.format("%s = ?", col.m_column))
+										.join(", ");
+			m_updateQuery = String.format(UPDATE_QUERY_FORMAT, m_table, setClause, m_whereClause);
+		}
+		return m_updateQuery;
 	}
 
 	@Override
-	public void serialize(JsonGenerator gen) throws IOException {
-		gen.writeStartObject();
-		gen.writeStringField("@class", MultiColumnAssetVariable.class.getName());
-		super.serialize(gen);
-		
-		gen.writeStringField("table", m_table);
-		gen.writeStringField("whereClause", m_whereClause);
-		gen.writeArrayFieldStart("columns");
-		FStream.from(this.m_columns).forEachOrThrow(gen::writeObject);
-		gen.writeEndArray();
-		
-		gen.writeEndObject();
+	public String getSerializationType() {
+		return SERIALIZATION_TYPE;
 	}
 	
-	public static MultiColumnAssetVariableConfig parseJson(JsonNode jnode) throws IOException {
+	@Override
+	public void serializeFields(JsonGenerator gen) throws IOException {
+		super.serializeFields(gen);
+		
+		gen.writeStringField(FIELD_TABLE, m_table);
+		gen.writeStringField(FIELD_WHERE_CLAUSE, m_whereClause);
+		gen.writeArrayFieldStart(FIELD_COLUMNS);
+		FStream.from(this.m_columns).forEachOrThrow(col -> col.serialize(gen));
+		gen.writeEndArray();
+	}
+
+	public static MultiColumnAssetVariableConfig deserializeFields(JsonNode jnode) {
 		MultiColumnAssetVariableConfig config = new MultiColumnAssetVariableConfig();
-		parseJson(config, jnode);
-		
-		config.m_table = jnode.get("table").asText();
-		config.m_whereClause = jnode.get("whereClause").asText();
+		config.loadFields(jnode);
+
+		config.m_table = JacksonUtils.getStringField(jnode, FIELD_TABLE);
+		config.m_whereClause = JacksonUtils.getStringField(jnode, FIELD_WHERE_CLAUSE);
 		config.m_columns = FStream.from(jnode.get("columns").elements())
-								.mapOrThrow(json -> MDTModelSerDe.getJsonMapper().treeToValue(json, ColumnConfig.class))
-								.toList();
-		
-		String colCsv = FStream.from(config.m_columns).map(ColumnConfig::getName).join(", ");
-		config.m_readQuery = String.format(READ_QUERY_FORMAT, colCsv, config.m_table, config.m_whereClause);
-		
-		String setClause = FStream.from(config.m_columns)
-									.map(col -> String.format("%s = ?", col.m_name))
-									.join(", ");
-		config.m_updateSql = String.format(UPDATE_QUERY_FORMAT, config.m_table, setClause, config.m_whereClause);
+									.mapOrThrow(ColumnConfig::deserialize)
+									.toList();
 		
 		return config;
 	}
 	
 	public static class ColumnConfig {
-		private String m_name;
-		private String m_path;
+		private final String m_column;
+		private final String m_path;
 		
-		public ColumnConfig(@JsonProperty("name") String name, @JsonProperty("path") String path) {
-            m_name = name;
+		public ColumnConfig(String column, String path) {
+            m_column = column;
             m_path = path;
 		}
 		
 		public String getName() {
-            return m_name;
+            return m_column;
         }
 		
 		public String getPath() {
 			return m_path;
+		}
+		
+		private static ColumnConfig deserialize(JsonNode jnode) {
+			return FStream.from(jnode.elements())
+							.map(ent -> {
+								String name = JacksonUtils.getStringField(jnode, "column");
+								String path = JacksonUtils.getStringField(jnode, "path");
+								return new ColumnConfig(name, path);
+							})
+							.findFirst()
+							.get();
+		}
+		
+		private void serialize(JsonGenerator gen) throws IOException {
+			gen.writeStartObject();
+			gen.writeStringField("column", m_column);
+			gen.writeStringField("path", m_path);
+			gen.writeEndObject();
 		}
 	};
 }

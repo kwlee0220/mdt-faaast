@@ -23,7 +23,7 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.MDTSubstitutor;
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
-import mdt.persistence.asset.jdbc.JdbcAssetVariable;
+import mdt.persistence.asset.jdbc.SimpleJdbcAssetVariable;
 
 /**
  *
@@ -31,7 +31,7 @@ import mdt.persistence.asset.jdbc.JdbcAssetVariable;
  */
 public class DefaultJdbcValueProvider implements AssetValueProvider {
 	private final DefaultJdbcValueProviderConfig m_config;
-	private final JdbcAssetVariable m_variable;
+	private final SimpleJdbcAssetVariable m_variable;
 	private Instant m_lastAccessTime;
 
 	public DefaultJdbcValueProvider(ServiceContext serviceContext, Reference reference,

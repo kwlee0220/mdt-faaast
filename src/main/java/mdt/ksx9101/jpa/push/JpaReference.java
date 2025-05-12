@@ -14,7 +14,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import mdt.model.sm.SubmodelUtils;
 
 /**

@@ -1,18 +1,21 @@
 package mdt.assetconnection.operation;
 
-import java.util.Map;
-
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.KeyValue;
 import utils.stream.FStream;
+import utils.stream.KeyValueFStream;
 
+import mdt.client.operation.HttpOperationClient;
+import mdt.client.operation.OperationRequest;
+import mdt.client.operation.OperationResponse;
 import mdt.client.operation.OperationUtils;
-import mdt.task.builtin.HttpTask;
+import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.variable.AbstractVariable.ElementVariable;
+import mdt.model.sm.variable.AbstractVariable.ValueVariable;
+import mdt.model.sm.variable.Variable;
 
 import de.fraunhofer.iosb.ilt.faaast.service.ServiceContext;
 import de.fraunhofer.iosb.ilt.faaast.service.model.IdShortPath;
@@ -43,24 +46,27 @@ class HttpOperationProvider implements OperationProvider {
 	@Override
 	public void invokeSync(OperationVariable[] inputVars, OperationVariable[] inoutputVars,
 							OperationVariable[] outputVars) throws Exception {
-		HttpTask.Builder builder = HttpTask.builder()
-											.serverEndpoint(m_config.getEndpoint())
-											.operationId(m_config.getOpId())
-											.pollInterval(m_config.getPollInterval())
-											.timeout(m_config.getTimeout())
-											.sync(true);
-		FStream.of(inputVars).map(OperationUtils::toParameter).forEach(builder::addInputParameter);
-		FStream.of(inoutputVars).map(OperationUtils::toParameter).forEach(builder::addInputParameter);
-		FStream.of(outputVars).map(OperationUtils::toParameter).forEach(builder::addOutputParameter);
-		FStream.of(inoutputVars).map(OperationUtils::toParameter).forEach(builder::addOutputParameter);
-		HttpTask task = builder.build();
+		OperationRequest req = new OperationRequest();
+		req.setOperation(m_config.getOpId());
+		FStream.of(inputVars).map(OperationUtils::toTaskPort).forEach(req.getInputVariables()::add);
+		FStream.of(inoutputVars).map(OperationUtils::toTaskPort).forEach(req.getInputVariables()::add);
+		FStream.of(outputVars).map(OperationUtils::toTaskPort).forEach(req.getOutputVariables()::add);
+		FStream.of(inoutputVars).map(OperationUtils::toTaskPort).forEach(req.getOutputVariables()::add);
+		req.setAsync(false);
 		
-		Map<String,SubmodelElement> result = task.run();
+		HttpOperationClient client = HttpOperationClient.builder()
+														.setEndpoint(m_config.getEndpoint())
+														.setRequestBody(req)
+														.setPollInterval(m_config.getPollInterval())
+														.setTimeout(m_config.getTimeout())
+														.build();
+		
+		OperationResponse resp = client.run();
 		if ( s_logger.isInfoEnabled() ) {
-			s_logger.info("HttpOperation terminates: result=" + result);
+			s_logger.info("HttpOperation terminates: result=" + resp);
 		}
 		
-		updateOutputVariables(result, inoutputVars, outputVars);
+		updateOutputVariables(resp, inoutputVars, outputVars);
 	}
 	
 //	public void invokeAsync(OperationVariable[] inputVars,
@@ -108,16 +114,25 @@ class HttpOperationProvider implements OperationProvider {
 //		task.start();
 //	}
 	
-	private void updateOutputVariables(Map<String,SubmodelElement> result, OperationVariable[] inoutputVars,
+	private void updateOutputVariables(OperationResponse resp, OperationVariable[] inoutputVars,
 										OperationVariable[] outputVars) {
 		FStream.of(inoutputVars)
 				.concatWith(FStream.of(outputVars))
-				.innerJoin(FStream.from(result), opv -> opv.getValue().getIdShort(), KeyValue::key)
+				.tagKey(v -> v.getValue().getIdShort())
+				.innerJoin(KeyValueFStream.from(FStream.from(resp.getResult()).tagKey(Variable::getName)))
 				.forEach(match -> {
-					OperationVariable outVar = match._1;
-					KeyValue<String,SubmodelElement> outValue = match._2;
-
-					outVar.setValue(outValue.value());
+					OperationVariable outOpVar = match.value()._1;
+					Variable outVar = match.value()._2;
+					
+					if ( outVar instanceof ValueVariable vvar ) {
+						ElementValues.update(outOpVar.getValue(), vvar.readValue());
+					}
+					else if ( outVar instanceof ElementVariable elmVar ) {
+						outOpVar.setValue(elmVar.read());
+					}
+					else {
+						throw new IllegalArgumentException("Unsupported output variable: " + outVar);
+					}
 				});
 	}
 }
